@@ -25,15 +25,17 @@ You will need to wire your inverter to the Modbus adapter, this connection is ma
 
 If you can't find the connectors necessary on the inverter side, they can be purchased from <a href="https://cpc.farnell.com/phoenix-contact/mc-1-5-4-st-3-5/plug-free-3-5mm-4way/dp/CN18540">here</a>.
 
+## Prerequisites
+
+This integration is managed through the Home Assistant Community Store ( HACS ), please follow the HACS installation steps from <a href="https://hacs.xyz/">the HACS website</a> before continuing.
+
 ## Installation
 
-Copy the cyg_skyline directory into the config/custom_components directory on your HomeAssistant setup. If there's no custom_components directory already then create on in the config directory.
-
-After copying the directory, restart your HomeAssistant service.
+From the HACS menu, press the three dots on the top right and select Custom Repositories. In the repository, enter https://github.com/iPeel/HA-Skyline and set the category to Integration. You should now be able to see the SYG Skyline integration and choose Download from the bottom right of the CYG Skyline integration page. If requested to do so, restyart Home Assistant after downloading.
 
 ## Configuration
 
-Once installed, add your inverter to HomeAssistant from Settings > Devices and then the Integrations tab. At the bottom right, click "Add Integration" then select "CYG Skyline". When prompted, enter the IP address of your Modbus adapter.# The integration then scans for Modbus slaves, adding all inverters discovered.
+Once installed, add your inverter to HomeAssistant from Settings > Devices and then the Integrations tab. At the bottom right, click "Add Integration" then select "CYG Skyline". If used for the first time, wait a minute or two while dependencies are installed. When prompted, enter the IP address of your Modbus adapter.# The integration then scans for Modbus slaves, adding all inverters discovered.
 
 ### Multiple parallel inverters
 
