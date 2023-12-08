@@ -1,0 +1,28 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured",
+            "already_setup": "Only one hub allowed, configure existing using a CSV list of IP addresses"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host",
+                    "port": "Port"
+                }
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "soc": {
+                "name": "State Of Charge"
+            }
+        }
+    }
+}
