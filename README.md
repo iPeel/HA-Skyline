@@ -31,7 +31,7 @@ This integration is managed through the Home Assistant Community Store ( HACS ),
 
 ## Installation
 
-From the HACS menu, press the three dots on the top right and select Custom Repositories. In the repository, enter https://github.com/iPeel/HA-Skyline and set the category to Integration. You should now be able to see the SYG Skyline integration and choose Download from the bottom right of the CYG Skyline integration page. If requested to do so, restyart Home Assistant after downloading.
+From the HACS menu, press the three dots on the top right and select Custom Repositories. In the repository, enter https://github.com/iPeel/HA-Skyline and set the category to Integration. You should now be able to see the CYG Skyline integration and choose Download from the bottom right of the CYG Skyline integration page. If requested to do so, restart Home Assistant after downloading.
 
 ## Configuration
 
