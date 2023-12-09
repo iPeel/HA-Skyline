@@ -57,6 +57,6 @@ In the event of a communication failure, the integration will retry writes if se
 
 Many sensors are in English only and have no International translations, this is a work in progress.
 
-Sometimes sensors will ready zero, this is an issue with Skyline reporting and not the integration, you may have noticed this already in the Solar Touch app or on the cloudinverter web view. It seems that sometimes the inverter reports zero values. Solar output and grid utilisation seem to be the worse for this and as a reult the integration averages readings over the past 30 seconds.
+Sometimes sensors will read zero, this is an issue with Skyline reporting and not the integration, you may have noticed this already in the Solar Touch app or on the cloudinverter web view. It seems that sometimes the inverter reports zero values. Solar output and grid utilisation seem to be the worse for this and as a reult the integration averages readings over the past 30 seconds.
 
 If you shut down the inverter then at startup the inverter may report zero values for all historic readings, the integration makes an attempt to spot this and not post the data to HA but for the sake of historic sensor readings it is recommended to turn off the Modbus adapter when restarting the inverter.
