@@ -35,7 +35,7 @@ From the HACS menu, press the three dots on the top right and select Custom Repo
 
 ## Configuration
 
-Once installed, add your inverter to HomeAssistant from Settings > Devices and then the Integrations tab. At the bottom right, click "Add Integration" then select "Skyline". If used for the first time, wait a minute or two while dependencies are installed. When prompted, enter the IP address of your Modbus adapter.# The integration then scans for Modbus slaves, adding all inverters discovered.
+Once installed, add your inverter to HomeAssistant from Settings > Devices and then the Integrations tab. At the bottom right, click "Add Integration" then select "Skyline". If used for the first time, wait a minute or two while dependencies are installed. When prompted, enter the IP address of your Modbus adapter. The integration then scans for Modbus slaves, adding all inverters discovered.
 
 ### Multiple parallel inverters
 
