@@ -45,6 +45,8 @@ To use multiple modbus adapters, in the integration configuration provide each I
 
 Note when inverters are in parallel, each inverter will import and export at the rate specified! For example, if the "Grid Charge Max Power" setting is set to 6 then your parallel inverters will charge at 12kW total.
 
+When more than one inverter is discovered, some additional entities are registered which provide summed power for solar output, inverter output and grid / house / EPS demand. These are integration entities and not linked to any specific device so are only visible under the main integration entities view.
+
 ## Current Limitations
 
 Polling intervals are fixed at 10 seconds since the previous poll, this seems "real-time" enough.
