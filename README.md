@@ -1,7 +1,7 @@
-# HomeAssistant CYG Skyline integration
-This integration communicates with your CYG Skyline hybrid inverter system, providing real-time visibility on solar output, battery status, utilisation and more. It also allows you to control the work mode and various charging / discharging parameters.
+# HomeAssistant Skyline integration
+This integration communicates with your Skyline hybrid inverter system, providing real-time visibility on solar output, battery status, utilisation and more. It also allows you to control the work mode and various charging / discharging parameters.
 
-In order to use this integration, you must have connected your inverter to a Modbus to TCP/IP adapter through the RS485 port. CYG provides no reasonable way to communicate with the inverter through the WiFi or Ethernet connections on the inverter itself, as soon as they do this integration will be updated to use it. In the meantime, a device like the Waveshare RS486 to TCP/IP adapter will work.
+In order to use this integration, you must have connected your inverter to a Modbus to TCP/IP adapter through the RS485 port. Skyline provides no reasonable way to communicate with the inverter through the WiFi or Ethernet connections on the inverter itself, as soon as they do this integration will be updated to use it. In the meantime, a device like the Waveshare RS486 to TCP/IP adapter will work.
 
 ## Modbus adapter configuration
 
@@ -31,15 +31,15 @@ This integration is managed through the Home Assistant Community Store ( HACS ),
 
 ## Installation
 
-From the HACS menu, press the three dots on the top right and select Custom Repositories. In the repository, enter https://github.com/iPeel/HA-Skyline and set the category to Integration. You should now be able to see the CYG Skyline integration and choose Download from the bottom right of the CYG Skyline integration page. If requested to do so, restart Home Assistant after downloading.
+From the HACS menu, press the three dots on the top right and select Custom Repositories. In the repository, enter https://github.com/iPeel/HA-Skyline and set the category to Integration. You should now be able to see the Skyline integration and choose Download from the bottom right of the Skyline integration page. If requested to do so, restart Home Assistant after downloading.
 
 ## Configuration
 
-Once installed, add your inverter to HomeAssistant from Settings > Devices and then the Integrations tab. At the bottom right, click "Add Integration" then select "CYG Skyline". If used for the first time, wait a minute or two while dependencies are installed. When prompted, enter the IP address of your Modbus adapter.# The integration then scans for Modbus slaves, adding all inverters discovered.
+Once installed, add your inverter to HomeAssistant from Settings > Devices and then the Integrations tab. At the bottom right, click "Add Integration" then select "Skyline". If used for the first time, wait a minute or two while dependencies are installed. When prompted, enter the IP address of your Modbus adapter.# The integration then scans for Modbus slaves, adding all inverters discovered.
 
 ### Multiple parallel inverters
 
-If you have multiple inverters they can either be connected to the same modbus adapter, with each inverter configured with a unique slave address in the Communications settings in the Solar Touch App or by using multiple Modbus adapters. Currently CYG incorrectly synchronises the modbus address of each host when inverters are connected in parallel, and are yet to fix this issue ( if ever ). This means for parallel mode inverters you need multiple Modbus adapters.
+If you have multiple inverters they can either be connected to the same modbus adapter, with each inverter configured with a unique slave address in the Communications settings in the Solar Touch App or by using multiple Modbus adapters. Currently Skyline incorrectly synchronises the modbus address of each host when inverters are connected in parallel, and are yet to fix this issue ( if ever ). This means for parallel mode inverters you need multiple Modbus adapters.
 
 To use multiple modbus adapters, in the integration configuration provide each IP address separated by commas. At startup the integration scans for inverters and will present each inverter in a parallel configuration as a separate inverter.
 
@@ -51,12 +51,12 @@ Polling intervals are fixed at 10 seconds since the previous poll, this seems "r
 
 The integration currently assumes the inverter model is a 6kW type, the intention in future releases is to limit max charge / discharge parameters based on inverter model however for the moment you will need to configure only for the max rating of your inverter otherwise commands will probably fail.
 
-There are no battery temperature sensors, as CYG do not currently write the battery temperature address correctly ( it's always zero ). This has been reported but as yet CYG have not acknowledged the problem and as a result this sensor is not published.
+There are no battery temperature sensors, as Skyline do not currently write the battery temperature address correctly ( it's always zero ). This has been reported but as yet Skyline have not acknowledged the problem and as a result this sensor is not published.
 
 In the event of a communication failure, the integration will retry writes if sensor readings do not match a recent set request. There are 9 retry attempts and this is to ensure that any communications issues with the inverter are recovered. If you make a setting which your inverter does not support then the integration may keep retrying the setting when data read does not match what data was written.
 
 Many sensors are in English only and have no International translations, this is a work in progress.
 
-Sometimes sensors will ready zero, this is an issue with CYG reporting and not the integration, you may have noticed this already in the Solar Touch app or on the cloudinverter web view. It seems that sometimes the inverter reports zero values. Solar output and grid utilisation seem to be the worse for this and as a reult the integration averages readings over the past 30 seconds.
+Sometimes sensors will ready zero, this is an issue with Skyline reporting and not the integration, you may have noticed this already in the Solar Touch app or on the cloudinverter web view. It seems that sometimes the inverter reports zero values. Solar output and grid utilisation seem to be the worse for this and as a reult the integration averages readings over the past 30 seconds.
 
 If you shut down the inverter then at startup the inverter may report zero values for all historic readings, the integration makes an attempt to spot this and not post the data to HA but for the sake of historic sensor readings it is recommended to turn off the Modbus adapter when restarting the inverter.
