@@ -41,7 +41,7 @@ class Controller:
         self.aggregates = {}
         self.inverters = []
 
-        _LOGGER.info("CYG Skyline controller starting")
+        _LOGGER.info("Skyline controller starting")
 
     def aggregate(self, name: str, value, count: int):
         if not name in self.aggregates:
@@ -82,7 +82,7 @@ class Controller:
                 await self.poll_inverters()
 
         task = self.config.async_create_background_task(
-            self.hass, periodic(), "CYG Inverter Poll"
+            self.hass, periodic(), "Skyline Inverter Poll"
         )
 
         self.poller_task = task
@@ -118,7 +118,8 @@ class Controller:
                     or inverter_config_data.registers is None
                 ):
                     _LOGGER.error(
-                        "CYG Inverter did not provide all results at host " + self.host
+                        "Skyline Inverter did not provide all results at host "
+                        + self.host
                     )
                     continue
 
@@ -130,7 +131,7 @@ class Controller:
                     and registers_to_unsigned_32(battery_data.registers, 17) == 0
                 ):
                     _LOGGER.into(
-                        "CYG Inverter provided too many zero registers at host "
+                        "Skyline Inverter provided too many zero registers at host "
                         + self.host
                     )
                     continue
@@ -353,7 +354,7 @@ class Controller:
                     register_to_signed_16(inverter_power_data.registers[27])
                 )
 
-                # No point in the below as the inverter is always returning zero until CYG fix it.
+                # No point in the below as the inverter is always returning zero until Skyline fix it.
                 # self.sensor_entities[
                 #    inverter.serial_number + "_battery_temp"
                 # ].set_native_value(register_to_signed_16(battery_data.registers[1]))
@@ -445,8 +446,8 @@ class Controller:
 
                     _LOGGER.info("Created inverter")
 
-                    _LOGGER.info("CYG Model Number is " + inverter.model_number)
-                    _LOGGER.info("CYG Serial Number is " + inverter.serial_number)
+                    _LOGGER.info("Skyline Model Number is " + inverter.model_number)
+                    _LOGGER.info("Skyline Serial Number is " + inverter.serial_number)
 
                     self.inverters.append(inverter)
 
@@ -469,7 +470,7 @@ class Controller:
         if self.poller_task is not None:
             self.poller_task.cancel()
             self.poller_task = None
-            _LOGGER.info("CYG Skyline is no longer polling")
+            _LOGGER.info("Skyline is no longer polling")
 
     async def initialise(self):
         await self.get_identity_info()

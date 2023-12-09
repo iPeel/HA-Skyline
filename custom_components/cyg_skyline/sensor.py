@@ -38,7 +38,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up sensor platform."""
 
-    _LOGGER.info("CYG async_setup_entry setup")
+    _LOGGER.info("Skyline async_setup_entry setup")
 
     controller = hass.data[DOMAIN]["controller"]
 
@@ -461,7 +461,7 @@ async def async_setup_entry(
             category=EntityCategory.DIAGNOSTIC,
         )
 
-        # No point in the below as the inverter is always returning zero until CYG fix it.
+        # No point in the below as the inverter is always returning zero until Skylinefix it.
         # controller.sensor_entities[
         #    inverter.serial_number + "_battery_temp"
         # ] = InverterSensorEntity(

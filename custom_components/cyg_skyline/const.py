@@ -1,4 +1,4 @@
-"""Constants for the CYG Skyline integration."""
+"""Constants for the Skyline integration."""
 
 from homeassistant.const import Platform
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 DOMAIN = "cyg_skyline"
 INVERTER_POLL_INTERVAL_SECONDS = 10
-MODBUS_MAX_SLAVE_ADDRESS = 1  # Stops us wasting time because CYG doesn't let you change the slave address on parallel systems.
+MODBUS_MAX_SLAVE_ADDRESS = 1  # Stops us wasting time because Skyline doesn't let you change the slave address on parallel systems.
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.SELECT,
@@ -75,8 +75,8 @@ class Inverter:
 
         self.device_info = DeviceInfo(
             identifiers={(DOMAIN, self.serial_number)},
-            name="CYG Inverter " + self.serial_number,
-            manufacturer="CYG Sunri",
+            name="Skyline Inverter " + self.serial_number,
+            manufacturer="Skyline",
             model=self.model_number,
         )
 
