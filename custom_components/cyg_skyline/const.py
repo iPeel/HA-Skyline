@@ -75,7 +75,7 @@ class Inverter:
 
         self.device_info = DeviceInfo(
             identifiers={(DOMAIN, self.serial_number)},
-            name="Skyline Inverter " + self.serial_number,
+            name="Skyline " + self.serial_number,
             manufacturer="Skyline",
             model=self.model_number,
         )
