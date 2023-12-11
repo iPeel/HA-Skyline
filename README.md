@@ -1,6 +1,8 @@
 # HomeAssistant Skyline integration
 This integration communicates with your Skyline hybrid inverter system, providing real-time visibility on solar output, battery status, utilisation and more. It also allows you to control the work mode and various charging / discharging parameters.
 
+![image](https://github.com/iPeel/HA-Skyline/assets/49528212/af71b2de-1363-4bc8-8662-69e89101a9b9)
+
 In order to use this integration, you must have connected your inverter to a Modbus to TCP/IP adapter through the RS485 port. Skyline provides no reasonable way to communicate with the inverter through the WiFi or Ethernet connections on the inverter itself, as soon as they do this integration will be updated to use it. In the meantime, a device like the Waveshare RS485 to TCP/IP adapter will work.
 
 ## Modbus adapter configuration
