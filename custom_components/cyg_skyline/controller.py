@@ -363,31 +363,31 @@ class Controller:
                 _LOGGER.info("Error retrieving inverter stats")
 
         self.sensor_entities["skyline_consumer_load"].set_native_value(
-            round(skyline_eps_load + skyline_grid_tied_load, 1)
+            round(skyline_eps_load + skyline_grid_tied_load, 2)
         )
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
-                round(skyline_pv_power, 1)
+                round(skyline_pv_power, 2)
             )
 
             self.sensor_entities["skyline_battery_load"].set_native_value(
-                round(skyline_battery_load, 1)
+                round(skyline_battery_load, 2)
             )
 
             self.sensor_entities["skyline_grid_load"].set_native_value(
-                round(skyline_grid_load, 1)
+                round(skyline_grid_load, 2)
             )
 
             self.sensor_entities["skyline_grid_tied_load"].set_native_value(
-                round(skyline_grid_tied_load, 1)
+                round(skyline_grid_tied_load, 2)
             )
             self.sensor_entities["skyline_inverter_load"].set_native_value(
-                round(skyline_inverter_load, 1)
+                round(skyline_inverter_load, 2)
             )
 
             self.sensor_entities["skyline_eps_load"].set_native_value(
-                round(skyline_eps_load, 1)
+                round(skyline_eps_load, 2)
             )
 
     async def set_register(self, inverter: Inverter, register: int, value: int):
