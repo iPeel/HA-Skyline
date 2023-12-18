@@ -68,7 +68,7 @@ async def async_setup_entry(
             "mdi:solar-power",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -82,7 +82,7 @@ async def async_setup_entry(
             "mdi:solar-power",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -97,7 +97,7 @@ async def async_setup_entry(
             "mdi:solar-power",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -112,7 +112,7 @@ async def async_setup_entry(
             "mdi:battery-minus-variant",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -126,7 +126,7 @@ async def async_setup_entry(
             "mdi:transmission-tower",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -140,7 +140,7 @@ async def async_setup_entry(
             "mdi:home-lightning-bolt",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -154,7 +154,7 @@ async def async_setup_entry(
             "mdi:power-socket",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -168,7 +168,7 @@ async def async_setup_entry(
             "mdi:flash",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -214,7 +214,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -230,7 +230,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -246,7 +246,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -261,7 +261,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -276,7 +276,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -292,7 +292,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -308,7 +308,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -323,7 +323,7 @@ async def async_setup_entry(
             unitOfMeasurement=UnitOfEnergy.KILO_WATT_HOUR,
             deviceClass=SensorDeviceClass.ENERGY,
             stateClass=SensorStateClass.TOTAL_INCREASING,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities[
@@ -337,7 +337,7 @@ async def async_setup_entry(
             "mdi:current-ac",
             unitOfMeasurement=UnitOfElectricCurrent.AMPERE,
             deviceClass=SensorDeviceClass.CURRENT,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -367,7 +367,7 @@ async def async_setup_entry(
             "mdi:current-ac",
             unitOfMeasurement=UnitOfElectricCurrent.AMPERE,
             deviceClass=SensorDeviceClass.CURRENT,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -382,7 +382,7 @@ async def async_setup_entry(
             "mdi:current-ac",
             unitOfMeasurement=UnitOfElectricCurrent.AMPERE,
             deviceClass=SensorDeviceClass.CURRENT,
-            decimals=1,
+            decimals=2,
             category=EntityCategory.DIAGNOSTIC,
         )
 
@@ -486,7 +486,7 @@ async def async_setup_entry(
         "mdi:power-socket",
         unitOfMeasurement=UnitOfPower.KILO_WATT,
         deviceClass=SensorDeviceClass.POWER,
-        decimals=1,
+        decimals=2,
     )
 
     if len(controller.inverters) > 1:
@@ -499,7 +499,7 @@ async def async_setup_entry(
             "mdi:solar-power",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities["skyline_battery_load"] = InverterSensorEntity(
@@ -511,7 +511,7 @@ async def async_setup_entry(
             "mdi:battery-minus-variant",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities["skyline_grid_load"] = InverterSensorEntity(
@@ -523,7 +523,7 @@ async def async_setup_entry(
             "mdi:transmission-tower",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities["skyline_grid_tied_load"] = InverterSensorEntity(
@@ -535,7 +535,7 @@ async def async_setup_entry(
             "mdi:home-lightning-bolt",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities["skyline_eps_load"] = InverterSensorEntity(
@@ -547,7 +547,7 @@ async def async_setup_entry(
             "mdi:power-socket",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
         controller.sensor_entities["skyline_inverter_load"] = InverterSensorEntity(
@@ -559,7 +559,7 @@ async def async_setup_entry(
             "mdi:flash",
             unitOfMeasurement=UnitOfPower.KILO_WATT,
             deviceClass=SensorDeviceClass.POWER,
-            decimals=1,
+            decimals=2,
         )
 
     entities = controller.get_sensor_entities()
