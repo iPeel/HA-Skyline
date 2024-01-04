@@ -33,6 +33,7 @@ async def async_setup_entry(
             maxValue=6,
             stepSize=0.5,
             valueMultiplier=1000,
+            adjustForParallel=True
         )
 
         controller.number_entities[
@@ -49,6 +50,7 @@ async def async_setup_entry(
             maxValue=6,
             stepSize=0.5,
             valueMultiplier=1000,
+            adjustForParallel=True
         )
 
         controller.number_entities[
@@ -65,6 +67,7 @@ async def async_setup_entry(
             maxValue=MAX_FEED_IN_POWER_W / 1000,
             stepSize=0.5,
             valueMultiplier=1000,
+            adjustForParallel=True
         )
 
         controller.number_entities[
@@ -111,6 +114,7 @@ class InverterNumberEntity(NumberEntity):
         category=None,
         registerToChange=None,
         valueMultiplier=1,
+        adjustForParallel=False
     ) -> None:
         self.currentValue = None
         self.inverter = inverter
@@ -137,14 +141,19 @@ class InverterNumberEntity(NumberEntity):
             self._attr_entity_category = category
 
         self._attr_native_min_value = minValue
-        self._attr_native_max_value = maxValue
+
+        if (adjustForParallel):
+            self._attr_native_max_value = maxValue * len(controller.inverters)
+        else:
+            self._attr_native_max_value = maxValue
+
         self._attr_native_step = stepSize
 
         self.register_to_change = registerToChange
         self.value_multiplier = valueMultiplier
 
         self._attr_entity_registry_visible_default = False
-
+        self.adjust_for_parallel = adjustForParallel
     def set_native_value(self, value: float) -> None:
         _LOGGER.info("Set Native Value")
 
@@ -156,11 +165,18 @@ class InverterNumberEntity(NumberEntity):
 
         # self.currentValue = value LEAVE THIS UNCHANGED, let the next poller confirm the change instead.
         await self.controller.set_register(
-            self.inverter, self.register_to_change, int(value * self.value_multiplier)
+            self.inverter, self.register_to_change, int(value * self.get_value_multiplier())
         )
 
+    def get_value_multiplier(self) -> float:
+        if self.adjust_for_parallel == True and self.controller.inverters > 1:
+            return self.value_multiplier / len(self.controller.inverters)
+
+        return self.value_multiplier
+
     def set_number_value(self, new_state: float) -> None:
-        newValue = new_state / self.value_multiplier
+
+        newValue = new_state / self.get_value_multiplier()
 
         if self.currentValue is not None and self.currentValue == newValue:
             # avoid noise...
