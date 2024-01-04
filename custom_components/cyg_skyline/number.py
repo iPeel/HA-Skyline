@@ -142,8 +142,9 @@ class InverterNumberEntity(NumberEntity):
 
         self._attr_native_min_value = minValue
 
-        if (adjustForParallel):
-            self._attr_native_max_value = maxValue * len(controller.inverters)
+        if (adjustForParallel == True):
+            self._attr_native_max_value = maxValue * len(self.controller.inverters)
+            _LOGGER.info("setting maximum value to " + str(maxValue * len(self.controller.inverters)))
         else:
             self._attr_native_max_value = maxValue
 
@@ -169,7 +170,7 @@ class InverterNumberEntity(NumberEntity):
         )
 
     def get_value_multiplier(self) -> float:
-        if self.adjust_for_parallel == True and self.controller.inverters > 1:
+        if self.adjust_for_parallel == True and len(self.controller.inverters) > 1:
             return self.value_multiplier / len(self.controller.inverters)
 
         return self.value_multiplier
