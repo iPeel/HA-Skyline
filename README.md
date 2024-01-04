@@ -45,7 +45,7 @@ If you have multiple inverters they can either be connected to the same modbus a
 
 To use multiple modbus adapters, in the integration configuration provide each IP address separated by commas. At startup the integration scans for inverters and will present each inverter in a parallel configuration as a separate inverter.
 
-Note when inverters are in parallel, each inverter will import and export at the rate specified! For example, if the "Grid Charge Max Power" setting is set to 6 then your parallel inverters will charge at 12kW total.
+Note when inverters are in parallel, inverters will report their respective power settings adjusted for the number of inverters and will share and setting equally between them. For example, with 2 parallel inverters the Grid Charge Max Power setting will read 6kW from each inverter but present this as 12kW in Home Assistant, then any change of setting will halve the set amount for each inverter, so setting to 10kW will end up as 5kW on each inverter.
 
 When more than one inverter is discovered, some additional entities are registered which provide summed power for solar output, inverter output and grid / house / EPS demand. These are integration entities and not linked to any specific device so are only visible under the main integration entities view.
 
