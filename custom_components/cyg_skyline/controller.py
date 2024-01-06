@@ -308,6 +308,10 @@ class Controller:
                     inverter.serial_number + "_hybrid_work_mode"
                 ].set_selected_option(str(inverter_config_data.registers[0]))
 
+                self.switch_entities[
+                    inverter.serial_number + "_eps_enabled"
+                ].set_selected_option(inverter_config_data.registers[28])
+
                 self.sensor_entities[
                     inverter.serial_number + "_battery_voltage"
                 ].set_native_value(battery_data.registers[6] / 10)
@@ -359,7 +363,8 @@ class Controller:
                 #    inverter.serial_number + "_battery_temp"
                 # ].set_native_value(register_to_signed_16(battery_data.registers[1]))
 
-            except:
+            except Exception as e:
+                _LOGGER.info(e)
                 _LOGGER.info("Error retrieving inverter stats")
 
         self.sensor_entities["skyline_consumer_load"].set_native_value(
@@ -479,6 +484,11 @@ class Controller:
         """Get sensor entities."""
 
         return list(self.sensor_entities.values())
+
+    def get_switch_entities(self):
+        """Get switch entities."""
+
+        return list(self.switch_entities.values())
 
     def get_select_entities(self):
         """Get select entities."""

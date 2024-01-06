@@ -12,6 +12,7 @@ MODBUS_MAX_SLAVE_ADDRESS = 1  # Stops us wasting time because Skyline doesn't le
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.SELECT,
+    Platform.SWITCH,
     Platform.NUMBER,
     Platform.BINARY_SENSOR,
 ]
