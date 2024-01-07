@@ -352,6 +352,10 @@ class Controller:
                     inverter.serial_number + "_grid_am_exporting"
                 ].set_binary_value(self.am_exporting_importing(inverter, False))
 
+                self.binary_sensor_entities[
+                    inverter.serial_number + "_grid_am_importing"
+                ].set_binary_value(self.am_exporting_importing(inverter, True))
+                
                 self.sensor_entities[
                     inverter.serial_number + "_system_temp"
                 ].set_native_value(
