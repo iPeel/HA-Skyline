@@ -1,8 +1,4 @@
-from collections.abc import Callable
-from datetime import datetime
 import logging
-from typing import Optional
-
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorDeviceClass,
@@ -13,7 +9,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
-    Platform,
     UnitOfEnergy,
     UnitOfPower,
     UnitOfElectricCurrent,
@@ -21,14 +16,12 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity_registry import async_entries_for_device
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from homeassistant.util import dt as dt_util
 from homeassistant.helpers.entity import generate_entity_id
 
-from .const import DOMAIN, Inverter
+from .const import DOMAIN
+from .inverter import Inverter
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -6,7 +6,6 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN, PLATFORMS
 
-import asyncio
 import logging
 from .controller import Controller
 

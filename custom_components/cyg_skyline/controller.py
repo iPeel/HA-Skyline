@@ -7,9 +7,9 @@ from .const import (
     INVERTER_POLL_INTERVAL_SECONDS,
     MODBUS_MAX_SLAVE_ADDRESS,
     PLATFORMS,
-    Inverter,
-    ModbusHost,
 )
+
+from .inverter import Inverter, ModbusHost
 
 import logging
 import struct
@@ -43,32 +43,51 @@ class Controller:
 
         _LOGGER.info("Skyline controller starting")
 
-    def aggregate(self, name: str, value, count: int):
+    def aggregate(self, name: str, value, count: int, trimTo=-1):
+
+        if trimTo == -1:
+            trimTo = count
+
         if not name in self.aggregates:
             self.aggregates[name] = []
 
-        while len(self.aggregates[name]) >= count:
+        while len(self.aggregates[name]) >= trimTo:
             self.aggregates[name].pop(0)
 
         self.aggregates[name].append(value)
 
         t = 0
+        num = 0
         for v in self.aggregates[name]:
             t = t + v
-        return t / len(self.aggregates[name])
+            num = num + 1
+            if num == count:
+                break
+
+        return t / num
 
     def am_exporting_importing(self, inverter: Inverter, is_import: bool) -> bool:
-        minCount = math.ceil(30 / INVERTER_POLL_INTERVAL_SECONDS)
+        minCount = math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)
+
 
         if len(self.aggregates[inverter.serial_number + "_grid_load"]) < minCount:
             return False
 
+        vals = ""
+
         for v in self.aggregates[inverter.serial_number + "_grid_load"]:
+
+            if len(vals) > 0:
+                vals = vals + ","
+            vals = vals + str(v)
+
             if is_import and v <= 0.1:
                 return False
 
             if not is_import and v >= -0.1:
                 return False
+
+        _LOGGER.error("Import / Export values " + vals + " so returning true with is_import as " + str(is_import))
 
         return True
 
@@ -192,6 +211,7 @@ class Controller:
                             inverter.serial_number + "_grid_load",
                             inverter_grid_load,
                             math.ceil(30 / INVERTER_POLL_INTERVAL_SECONDS),
+                            trimTo=math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)+1
                         ),
                         1,
                     )
@@ -355,7 +375,7 @@ class Controller:
                 self.binary_sensor_entities[
                     inverter.serial_number + "_grid_am_importing"
                 ].set_binary_value(self.am_exporting_importing(inverter, True))
-                
+
                 self.sensor_entities[
                     inverter.serial_number + "_system_temp"
                 ].set_native_value(
