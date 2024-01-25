@@ -4,6 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from .const import (
     DOMAIN,
+    IMPORT_EXPORT_MONITOR_DURATION_SECONDS,
     INVERTER_POLL_INTERVAL_SECONDS,
     MODBUS_MAX_SLAVE_ADDRESS,
     PLATFORMS,
@@ -67,7 +68,7 @@ class Controller:
         return t / num
 
     def am_exporting_importing(self, inverter: Inverter, is_import: bool) -> bool:
-        minCount = math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)
+        minCount = math.ceil(IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS)
 
 
         if len(self.aggregates[inverter.serial_number + "_grid_load"]) < minCount:
@@ -211,7 +212,7 @@ class Controller:
                             inverter.serial_number + "_grid_load",
                             inverter_grid_load,
                             math.ceil(30 / INVERTER_POLL_INTERVAL_SECONDS),
-                            trimTo=math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)+1
+                            trimTo=math.ceil(IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS)+1
                         ),
                         1,
                     )
