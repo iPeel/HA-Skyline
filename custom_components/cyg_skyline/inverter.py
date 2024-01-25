@@ -1,4 +1,4 @@
-from config.custom_components.cyg_skyline.const import INVERTER_POLL_INTERVAL_SECONDS, DOMAIN
+from .const import INVERTER_POLL_INTERVAL_SECONDS, DOMAIN
 from homeassistant.helpers.device_registry import DeviceInfo
 from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.transaction import ModbusSocketFramer
