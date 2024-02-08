@@ -474,9 +474,12 @@ class Controller:
 
     async def clickhouse_exec(self, cmd : str):
 
-        x = await self.aio_http_session.post(self.clickhouse_url, data=cmd)
+        try:
+            x = await self.aio_http_session.post(self.clickhouse_url, data=cmd)
 
-        if x.status != 200:
+            if x.status != 200:
+                _LOGGER.error("Clickhouse command failed: " + cmd)
+        except:
             _LOGGER.error("Clickhouse command failed: " + cmd)
 
     async def set_register(self, inverter: Inverter, register: int, value: int):
