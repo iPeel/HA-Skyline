@@ -1,10 +1,13 @@
 import asyncio
 import math
+import requests
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from .const import (
     DOMAIN,
     IMPORT_EXPORT_MONITOR_DURATION_SECONDS,
+    IMPORT_EXPORT_THRESHOLD,
     INVERTER_POLL_INTERVAL_SECONDS,
     MODBUS_MAX_SLAVE_ADDRESS,
     PLATFORMS,
@@ -14,6 +17,7 @@ from .inverter import Inverter, ModbusHost
 
 import logging
 import struct
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,6 +45,9 @@ class Controller:
         self._init_count = 0
         self.aggregates = {}
         self.inverters = []
+        self.clickhouse_url = ""
+        self.clickhouse_is_init = True
+        self.aio_http_session = async_get_clientsession(hass)
 
         _LOGGER.info("Skyline controller starting")
 
@@ -82,10 +89,10 @@ class Controller:
                 vals = vals + ","
             vals = vals + str(v)
 
-            if is_import and v <= 0.1:
+            if is_import and v <= float(IMPORT_EXPORT_THRESHOLD):
                 return False
 
-            if not is_import and v >= -0.1:
+            if not is_import and v >= float(0)-IMPORT_EXPORT_THRESHOLD:
                 return False
 
         _LOGGER.error("Import / Export values " + vals + " so returning true with is_import as " + str(is_import))
@@ -392,6 +399,8 @@ class Controller:
                 _LOGGER.info(e)
                 _LOGGER.info("Error retrieving inverter stats")
 
+
+
         self.sensor_entities["skyline_consumer_load"].set_native_value(
             round(skyline_eps_load + skyline_grid_tied_load, 2)
         )
@@ -419,6 +428,56 @@ class Controller:
             self.sensor_entities["skyline_eps_load"].set_native_value(
                 round(skyline_eps_load, 2)
             )
+
+        await self.record_stats_to_clickhouse()
+
+
+
+    async def record_stats_to_clickhouse(self):
+
+        if len(self.clickhouse_url) == 0:
+            return
+
+        if self.clickhouse_is_init == True:
+            await self.clickhouse_exec("create table if not exists skyline_stats ( at_utc DateTime ) ENGINE = MergeTree PARTITION BY toYYYYMM(at_utc) ORDER BY at_utc;")
+
+        create = ""
+
+
+        columns = ""
+        values = ""
+
+        for k in self.sensor_entities:
+            e: SensorEntity = self.sensor_entities[k]
+
+            if self.clickhouse_is_init == True:
+                if create == "":
+                    create = create + "alter table skyline_stats add column if not exists " + k.replace("-","_") + " Float64"
+                else:
+                    create = create + ", add column if not exists " + k.replace("-","_") + " Float64"
+
+            if columns == "":
+                columns = k.replace("-","_")
+                values = str(e.native_value)
+            else:
+                columns = columns + "," + k.replace("-","_")
+                values = values + "," + str(e.native_value)
+
+
+
+        if self.clickhouse_is_init == True:
+            await self.clickhouse_exec(create + ";")
+            self.clickhouse_is_init = False
+
+        await self.clickhouse_exec("insert into skyline_stats ( at_utc," + columns + ") values ( toDateTime(now(), 'UTC')," + values + ");")
+
+
+    async def clickhouse_exec(self, cmd : str):
+
+        x = await self.aio_http_session.post(self.clickhouse_url, data=cmd)
+
+        if x.status != 200:
+            _LOGGER.error("Clickhouse command failed: " + cmd)
 
     async def set_register(self, inverter: Inverter, register: int, value: int):
         try:

@@ -9,7 +9,14 @@ from .const import DOMAIN, PLATFORMS
 import logging
 from .controller import Controller
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+
+
+
 _LOGGER = logging.getLogger(__name__)
+
+
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -23,6 +30,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("*** STARTUP***")
 
     controller = Controller(entry.data["host"], entry.data["port"], hass, entry)
+
+    if "clickhouse_url" in entry.data:
+        controller.clickhouse_url = entry.data["clickhouse_url"]
+
     hass.data[DOMAIN]["controller"] = controller
     await controller.initialise()
 
