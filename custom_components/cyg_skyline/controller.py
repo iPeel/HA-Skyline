@@ -95,7 +95,7 @@ class Controller:
             if not is_import and v >= float(0)-IMPORT_EXPORT_THRESHOLD:
                 return False
 
-        _LOGGER.error("Import / Export values " + vals + " so returning true with is_import as " + str(is_import))
+        _LOGGER.debug("Import / Export values " + vals + " so returning true with is_import as " + str(is_import))
 
         return True
 
