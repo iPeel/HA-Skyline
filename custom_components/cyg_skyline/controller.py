@@ -47,7 +47,7 @@ class Controller:
         self.inverters = []
         self.clickhouse_url = ""
         self.clickhouse_is_init = True
-        self.aio_http_session = async_get_clientsession(hass)
+        self.aio_http_session = None
 
         _LOGGER.info("Skyline controller starting")
 
@@ -178,11 +178,7 @@ class Controller:
                     inverter.serial_number + "_pv_power"
                 ].set_native_value(
                     round(
-                        self.aggregate(
-                            inverter.serial_number + "_pv_power",
-                            inverter_pv_power,
-                            math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS),
-                        ),
+                        inverter_pv_power,
                         1,
                     )
                 )
@@ -407,7 +403,7 @@ class Controller:
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
-                round(skyline_pv_power, 2)
+                round(self.aggregate("skyline_pv_power", skyline_pv_power, math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)), 2)
             )
 
             self.sensor_entities["skyline_battery_load"].set_native_value(
@@ -435,10 +431,11 @@ class Controller:
 
     async def record_stats_to_clickhouse(self):
 
-        if len(self.clickhouse_url) == 0:
+        if self.clickhouse_url is None or len(self.clickhouse_url) < 5:
             return
 
         if self.clickhouse_is_init == True:
+            self.aio_http_session = async_get_clientsession(self.hass)
             await self.clickhouse_exec("create table if not exists skyline_stats ( at_utc DateTime ) ENGINE = MergeTree PARTITION BY toYYYYMM(at_utc) ORDER BY at_utc;")
 
         create = ""
