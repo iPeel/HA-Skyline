@@ -10,7 +10,7 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.config_entries import ConfigEntry, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 
 from .const import DOMAIN
 
@@ -21,8 +21,8 @@ from pymodbus.client import AsyncModbusTcpClient
 _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required("host", default="192.168.1.254", description="Host(s)"): str,
-        vol.Required("port", default=502, description="Port"): int
+        vol.Required("host", default="192.168.1.254"): str,
+        vol.Required("port", default=502): int,
     }
 )
 
@@ -174,22 +174,12 @@ class OptionsFlowHandler(OptionsFlow):
                     data=user_input,
                 )
 
-        clickhouse_url = ""
-        if "clickhouse_url" in self.config_entry.data:
-            clickhouse_url = self.config_entry.data["clickhouse_url"]
-
-
-        placeholders: dict[str, str] = {"host": "Hosts(s)","port": "Default TCP Port","clickhouse_url": "ClickHouse Server URL"}
-
         return self.async_show_form(
             step_id="init",
-
-            description_placeholders=placeholders,
             data_schema=vol.Schema(
                 {
                     vol.Required("host", default=self.config_entry.data["host"]): str,
                     vol.Required("port", default=self.config_entry.data["port"]): int,
-                    vol.Optional("clickhouse_url", default=clickhouse_url, description="Clickhouse URL"):str
                 }
             ),
             errors=errors,
