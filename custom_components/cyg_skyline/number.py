@@ -79,7 +79,7 @@ async def async_setup_entry(
             inverter,
             "Grid Charge End SoC",
             "grid_max_charge_soc",
-            "mdi:battery-arrow-up",
+            "mdi:battery-charging-high",
             registerToChange=0x2117,
             minValue=0,
             maxValue=100,
