@@ -1,23 +1,18 @@
 import asyncio
 import math
-import requests
-from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from .const import (
     DOMAIN,
-    IMPORT_EXPORT_MONITOR_DURATION_SECONDS,
-    IMPORT_EXPORT_THRESHOLD,
     INVERTER_POLL_INTERVAL_SECONDS,
     MODBUS_MAX_SLAVE_ADDRESS,
     PLATFORMS,
+    Inverter,
+    ModbusHost,
 )
-
-from .inverter import Inverter, ModbusHost
 
 import logging
 import struct
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,57 +40,35 @@ class Controller:
         self._init_count = 0
         self.aggregates = {}
         self.inverters = []
-        self.clickhouse_url = ""
-        self.clickhouse_is_init = True
-        self.aio_http_session = None
 
         _LOGGER.info("Skyline controller starting")
 
-    def aggregate(self, name: str, value, count: int, trimTo=-1):
-
-        if trimTo == -1:
-            trimTo = count
-
+    def aggregate(self, name: str, value, count: int):
         if not name in self.aggregates:
             self.aggregates[name] = []
 
-        while len(self.aggregates[name]) >= trimTo:
+        while len(self.aggregates[name]) >= count:
             self.aggregates[name].pop(0)
 
         self.aggregates[name].append(value)
 
         t = 0
-        num = 0
         for v in self.aggregates[name]:
             t = t + v
-            num = num + 1
-            if num == count:
-                break
-
-        return t / num
+        return t / len(self.aggregates[name])
 
     def am_exporting_importing(self, inverter: Inverter, is_import: bool) -> bool:
-        minCount = math.ceil(IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS)
-
+        minCount = math.ceil(30 / INVERTER_POLL_INTERVAL_SECONDS)
 
         if len(self.aggregates[inverter.serial_number + "_grid_load"]) < minCount:
             return False
 
-        vals = ""
-
         for v in self.aggregates[inverter.serial_number + "_grid_load"]:
-
-            if len(vals) > 0:
-                vals = vals + ","
-            vals = vals + str(v)
-
-            if is_import and v <= float(IMPORT_EXPORT_THRESHOLD):
+            if is_import and v <= 0.1:
                 return False
 
-            if not is_import and v >= float(0)-IMPORT_EXPORT_THRESHOLD:
+            if not is_import and v >= -0.1:
                 return False
-
-        _LOGGER.debug("Import / Export values " + vals + " so returning true with is_import as " + str(is_import))
 
         return True
 
@@ -178,7 +151,11 @@ class Controller:
                     inverter.serial_number + "_pv_power"
                 ].set_native_value(
                     round(
-                        inverter_pv_power,
+                        self.aggregate(
+                            inverter.serial_number + "_pv_power",
+                            inverter_pv_power,
+                            math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS),
+                        ),
                         1,
                     )
                 )
@@ -215,7 +192,6 @@ class Controller:
                             inverter.serial_number + "_grid_load",
                             inverter_grid_load,
                             math.ceil(30 / INVERTER_POLL_INTERVAL_SECONDS),
-                            trimTo=math.ceil(IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS)+1
                         ),
                         1,
                     )
@@ -376,10 +352,6 @@ class Controller:
                     inverter.serial_number + "_grid_am_exporting"
                 ].set_binary_value(self.am_exporting_importing(inverter, False))
 
-                self.binary_sensor_entities[
-                    inverter.serial_number + "_grid_am_importing"
-                ].set_binary_value(self.am_exporting_importing(inverter, True))
-
                 self.sensor_entities[
                     inverter.serial_number + "_system_temp"
                 ].set_native_value(
@@ -395,15 +367,13 @@ class Controller:
                 _LOGGER.info(e)
                 _LOGGER.info("Error retrieving inverter stats")
 
-
-
         self.sensor_entities["skyline_consumer_load"].set_native_value(
             round(skyline_eps_load + skyline_grid_tied_load, 2)
         )
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
-                round(self.aggregate("skyline_pv_power", skyline_pv_power, math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)), 2)
+                round(skyline_pv_power, 2)
             )
 
             self.sensor_entities["skyline_battery_load"].set_native_value(
@@ -424,60 +394,6 @@ class Controller:
             self.sensor_entities["skyline_eps_load"].set_native_value(
                 round(skyline_eps_load, 2)
             )
-
-        await self.record_stats_to_clickhouse()
-
-
-
-    async def record_stats_to_clickhouse(self):
-
-        if self.clickhouse_url is None or len(self.clickhouse_url) < 5:
-            return
-
-        if self.clickhouse_is_init == True:
-            self.aio_http_session = async_get_clientsession(self.hass)
-            await self.clickhouse_exec("create table if not exists skyline_stats ( at_utc DateTime ) ENGINE = MergeTree PARTITION BY toYYYYMM(at_utc) ORDER BY at_utc;")
-
-        create = ""
-
-
-        columns = ""
-        values = ""
-
-        for k in self.sensor_entities:
-            e: SensorEntity = self.sensor_entities[k]
-
-            if self.clickhouse_is_init == True:
-                if create == "":
-                    create = create + "alter table skyline_stats add column if not exists " + k.replace("-","_") + " Float64"
-                else:
-                    create = create + ", add column if not exists " + k.replace("-","_") + " Float64"
-
-            if columns == "":
-                columns = k.replace("-","_")
-                values = str(e.native_value)
-            else:
-                columns = columns + "," + k.replace("-","_")
-                values = values + "," + str(e.native_value)
-
-
-
-        if self.clickhouse_is_init == True:
-            await self.clickhouse_exec(create + ";")
-            self.clickhouse_is_init = False
-
-        await self.clickhouse_exec("insert into skyline_stats ( at_utc," + columns + ") values ( toDateTime(now(), 'UTC')," + values + ");")
-
-
-    async def clickhouse_exec(self, cmd : str):
-
-        try:
-            x = await self.aio_http_session.post(self.clickhouse_url, data=cmd)
-
-            if x.status != 200:
-                _LOGGER.error("Clickhouse command failed: " + cmd)
-        except:
-            _LOGGER.error("Clickhouse command failed: " + cmd)
 
     async def set_register(self, inverter: Inverter, register: int, value: int):
         try:
