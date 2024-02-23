@@ -1,12 +1,13 @@
 import logging
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower
+from homeassistant.const import PERCENTAGE, UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.number import NumberEntity
-from .const import DOMAIN, MAX_FEED_IN_POWER_W, Inverter
+from .const import DOMAIN, MAX_FEED_IN_POWER_W
+from .inverter import Inverter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,8 +79,27 @@ async def async_setup_entry(
             inverter,
             "Grid Charge End SoC",
             "grid_max_charge_soc",
-            "mdi:battery-charging-60",
+            "mdi:battery-arrow-up",
             registerToChange=0x2117,
+            minValue=0,
+            maxValue=100,
+            stepSize=5,
+            valueMultiplier=1,
+            unitOfMeasurement=PERCENTAGE,
+            deviceClass=SensorDeviceClass.BATTERY,
+            stateClass=SensorStateClass.MEASUREMENT,
+        )
+
+        controller.number_entities[
+            inverter.serial_number + "_battery_max_soc"
+        ] = InverterNumberEntity(
+            hass,
+            controller,
+            inverter,
+            "Battery Max SoC",
+            "battery_max_soc",
+            "mdi:battery-arrow-up",
+            registerToChange=0x2119,
             minValue=0,
             maxValue=100,
             stepSize=5,
