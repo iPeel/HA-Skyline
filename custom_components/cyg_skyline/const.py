@@ -16,4 +16,3 @@ PLATFORMS: list[Platform] = [
 ]
 
 MAX_FEED_IN_POWER_W = 6000
-
