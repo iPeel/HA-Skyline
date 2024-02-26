@@ -326,6 +326,10 @@ class Controller:
                 ].set_number_value(inverter_config_data.registers[22])
 
                 self.number_entities[
+                    inverter.serial_number + "_battery_max_charge_power"
+                ].set_number_value(inverter_config_data.registers[24])
+
+                self.number_entities[
                     inverter.serial_number + "_battery_max_power"
                 ].set_number_value(inverter_config_data.registers[26])
 
@@ -403,7 +407,7 @@ class Controller:
 
 
         self.sensor_entities["skyline_consumer_load"].set_native_value(
-            round(skyline_eps_load + skyline_grid_tied_load, 2)
+            round(self.aggregate(inverter.serial_number + "skyline_consumer_load",skyline_eps_load + skyline_grid_tied_load,math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)), 2)
         )
 
         if len(self.inverters) > 1:
