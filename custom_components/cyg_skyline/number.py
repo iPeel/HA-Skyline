@@ -55,6 +55,23 @@ async def async_setup_entry(
         )
 
         controller.number_entities[
+            inverter.serial_number + "_battery_max_charge_power"
+        ] = InverterNumberEntity(
+            hass,
+            controller,
+            inverter,
+            "Battery Max Charge Power",
+            "battery_max_charge_power",
+            "mdi:battery-positive",
+            registerToChange=0x2118,
+            minValue=0,
+            maxValue=6,
+            stepSize=0.1,
+            valueMultiplier=1000,
+            adjustForParallel=True
+        )
+
+        controller.number_entities[
             inverter.serial_number + "_grid_max_feed_in_power"
         ] = InverterNumberEntity(
             hass,
