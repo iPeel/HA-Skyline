@@ -1,24 +1,23 @@
+"""Skyline communication and stats collection."""
 import asyncio
+import logging
 import math
-import requests
+import struct
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
 from .const import (
-    DOMAIN,
     IMPORT_EXPORT_MONITOR_DURATION_SECONDS,
     IMPORT_EXPORT_THRESHOLD,
     INVERTER_POLL_INTERVAL_SECONDS,
     MODBUS_MAX_SLAVE_ADDRESS,
+    NO_AGGREGATION,
     PLATFORMS,
 )
-
 from .inverter import Inverter, ModbusHost
-
-import logging
-import struct
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ class Controller:
     def __init__(
         self, host: str, port: int, hass: HomeAssistant, entry: ConfigEntry
     ) -> None:
+        """Initialise the controller."""
         self.host = host
         self.port = port
         self.hass = hass
@@ -52,11 +52,11 @@ class Controller:
         _LOGGER.info("Skyline controller starting")
 
     def aggregate(self, name: str, value, count: int, trimTo=-1):
-
+        """Stash a value to an aggregate array and return the average."""
         if trimTo == -1:
             trimTo = count
 
-        if not name in self.aggregates:
+        if name not in self.aggregates:
             self.aggregates[name] = []
 
         while len(self.aggregates[name]) >= trimTo:
@@ -72,11 +72,16 @@ class Controller:
             if num == count:
                 break
 
+        if NO_AGGREGATION is True:
+            return value
+
         return t / num
 
     def am_exporting_importing(self, inverter: Inverter, is_import: bool) -> bool:
-        minCount = math.ceil(IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS)
-
+        """Determine if we're importing or exporting."""
+        minCount = math.ceil(
+            IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS
+        )
 
         if len(self.aggregates[inverter.serial_number + "_grid_load"]) < minCount:
             return False
@@ -84,7 +89,6 @@ class Controller:
         vals = ""
 
         for v in self.aggregates[inverter.serial_number + "_grid_load"]:
-
             if len(vals) > 0:
                 vals = vals + ","
             vals = vals + str(v)
@@ -92,14 +96,20 @@ class Controller:
             if is_import and v <= float(IMPORT_EXPORT_THRESHOLD):
                 return False
 
-            if not is_import and v >= float(0)-IMPORT_EXPORT_THRESHOLD:
+            if not is_import and v >= float(0) - IMPORT_EXPORT_THRESHOLD:
                 return False
 
-        _LOGGER.debug("Import / Export values " + vals + " so returning true with is_import as " + str(is_import))
+        _LOGGER.debug(
+            "Import / Export values %s so returning true with is_import as  %s",
+            vals,
+            str(is_import),
+        )
 
         return True
 
     async def start_poller(self):
+        """Start the async polling of inverter data."""
+
         async def periodic():
             while True:
                 _LOGGER.debug("Polling Inverter Modbus")
@@ -115,6 +125,7 @@ class Controller:
         self.poller_task = task
 
     async def poll_inverters(self):
+        """Poll all inverters."""
         skyline_pv_power = float(0)
         skyline_battery_load = float(0)
         skyline_grid_load = float(0)
@@ -143,12 +154,18 @@ class Controller:
                     or grid_power_data.registers is None
                     or battery_data.registers is None
                     or inverter_config_data.registers is None
+                    or len(inverter_power_data.registers) < 64
+                    or len(grid_power_data.registers) < 63
+                    or len(battery_data.registers) < 19
+                    or len(inverter_config_data.registers) < 34
+                    or len(grid_config_data.registers) < 12
+                    or len(eps_data.registers) < 19
                 ):
                     _LOGGER.error(
-                        "Skyline Inverter did not provide all results at host "
-                        + self.host
+                        "Skyline Inverter did not provide all results at host %s",
+                        self.host,
                     )
-                    continue
+                    return
 
                 # if grid and battery totals are zero, smell a mis-report
                 if (
@@ -157,11 +174,11 @@ class Controller:
                     and registers_to_unsigned_32(battery_data.registers, 13) == 0
                     and registers_to_unsigned_32(battery_data.registers, 17) == 0
                 ):
-                    _LOGGER.into(
-                        "Skyline Inverter provided too many zero registers at host "
-                        + self.host
+                    _LOGGER.error(
+                        "Skyline Inverter provided too many zero registers at host %s",
+                        self.host,
                     )
-                    continue
+                    return
 
                 self.sensor_entities[inverter.serial_number + "_soc"].set_native_value(
                     battery_data.registers[0]
@@ -215,7 +232,11 @@ class Controller:
                             inverter.serial_number + "_grid_load",
                             inverter_grid_load,
                             math.ceil(30 / INVERTER_POLL_INTERVAL_SECONDS),
-                            trimTo=math.ceil(IMPORT_EXPORT_MONITOR_DURATION_SECONDS / INVERTER_POLL_INTERVAL_SECONDS)+1
+                            trimTo=math.ceil(
+                                IMPORT_EXPORT_MONITOR_DURATION_SECONDS
+                                / INVERTER_POLL_INTERVAL_SECONDS
+                            )
+                            + 1,
                         ),
                         1,
                     )
@@ -316,7 +337,6 @@ class Controller:
                     inverter.serial_number + "_battery_max_soc"
                 ].set_number_value(inverter_config_data.registers[25])
 
-
                 self.number_entities[
                     inverter.serial_number + "_grid_max_charge_soc"
                 ].set_number_value(inverter_config_data.registers[23])
@@ -400,19 +420,31 @@ class Controller:
                 #    inverter.serial_number + "_battery_temp"
                 # ].set_native_value(register_to_signed_16(battery_data.registers[1]))
 
-            except Exception as e:
+            except Exception as e:  # noqa: E722
                 _LOGGER.info(e)
                 _LOGGER.info("Error retrieving inverter stats")
 
-
-
         self.sensor_entities["skyline_consumer_load"].set_native_value(
-            round(self.aggregate(inverter.serial_number + "skyline_consumer_load",skyline_eps_load + skyline_grid_tied_load,math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)), 2)
+            round(
+                self.aggregate(
+                    "skyline_consumer_load",
+                    skyline_eps_load + skyline_grid_tied_load,
+                    math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS),
+                ),
+                2,
+            )
         )
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
-                round(self.aggregate("skyline_pv_power", skyline_pv_power, math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS)), 2)
+                round(
+                    self.aggregate(
+                        "skyline_pv_power",
+                        skyline_pv_power,
+                        math.ceil(60 / INVERTER_POLL_INTERVAL_SECONDS),
+                    ),
+                    2,
+                )
             )
 
             self.sensor_entities["skyline_battery_load"].set_native_value(
@@ -436,19 +468,18 @@ class Controller:
 
         await self.record_stats_to_clickhouse()
 
-
-
     async def record_stats_to_clickhouse(self):
-
+        """Record all our sensors to a clickhouse database if configured."""
         if self.clickhouse_url is None or len(self.clickhouse_url) < 5:
             return
 
-        if self.clickhouse_is_init == True:
+        if self.clickhouse_is_init is True:
             self.aio_http_session = async_get_clientsession(self.hass)
-            await self.clickhouse_exec("create table if not exists skyline_stats ( at_utc DateTime ) ENGINE = MergeTree PARTITION BY toYYYYMM(at_utc) ORDER BY at_utc;")
+            await self.clickhouse_exec(
+                "create table if not exists skyline_stats ( at_utc DateTime ) ENGINE = MergeTree PARTITION BY toYYYYMM(at_utc) ORDER BY at_utc;"
+            )
 
         create = ""
-
 
         columns = ""
         values = ""
@@ -456,55 +487,67 @@ class Controller:
         for k in self.sensor_entities:
             e: SensorEntity = self.sensor_entities[k]
 
-            if self.clickhouse_is_init == True:
+            if self.clickhouse_is_init is True:
                 if create == "":
-                    create = create + "alter table skyline_stats add column if not exists " + k.replace("-","_") + " Float64"
+                    create = (
+                        create
+                        + "alter table skyline_stats add column if not exists "
+                        + k.replace("-", "_")
+                        + " Float64"
+                    )
                 else:
-                    create = create + ", add column if not exists " + k.replace("-","_") + " Float64"
+                    create = (
+                        create
+                        + ", add column if not exists "
+                        + k.replace("-", "_")
+                        + " Float64"
+                    )
 
             if columns == "":
-                columns = k.replace("-","_")
+                columns = k.replace("-", "_")
                 values = str(e.native_value)
             else:
-                columns = columns + "," + k.replace("-","_")
+                columns = columns + "," + k.replace("-", "_")
                 values = values + "," + str(e.native_value)
 
-
-
-        if self.clickhouse_is_init == True:
+        if self.clickhouse_is_init is True:
             await self.clickhouse_exec(create + ";")
             self.clickhouse_is_init = False
 
-        await self.clickhouse_exec("insert into skyline_stats ( at_utc," + columns + ") values ( toDateTime(now(), 'UTC')," + values + ");")
+        await self.clickhouse_exec(
+            "insert into skyline_stats ( at_utc,"  # noqa: S608
+            + columns
+            + ") values ( toDateTime(now(), 'UTC'),"
+            + values
+            + ");"
+        )
 
-
-    async def clickhouse_exec(self, cmd : str):
-
+    async def clickhouse_exec(self, cmd: str):
+        """Execute a statement to the clikchouse database."""
         try:
             x = await self.aio_http_session.post(self.clickhouse_url, data=cmd)
 
             if x.status != 200:
-                _LOGGER.error("Clickhouse command failed: " + cmd)
-        except:
-            _LOGGER.error("Clickhouse command failed: " + cmd)
+                _LOGGER.error("Clickhouse command failed: %s", cmd)
+        except:  # noqa: E722
+            _LOGGER.error("Clickhouse command failed: %s", cmd)
 
     async def set_register(self, inverter: Inverter, register: int, value: int):
+        """Set a modbus register from a change in HA."""
         try:
             await inverter.write_register(register, value)
-        except:
+        except:  # noqa: E722
             _LOGGER.info("Pymodbus still raising errors on register writes")
         await self.poll_inverters()
 
     async def update_ha_state(self):
         """Schedule an update for all other included entities."""
-        all_entities = (
-            self.switch_entities + self.sensor_entities + self.binary_sensor_entities
-        )
 
     async def get_identity_info(self):
+        """Obtain the serial number, model etc."""
         hosts = self.host.replace(" ", "").split(sep=",")
         for host in hosts:
-            _LOGGER.info("Scanning for slaves on modbus host " + host)
+            _LOGGER.info("Scanning for slaves on modbus host %s", host)
             port = self.port
             if ":" in host:
                 port = int(host.split(sep=":")[1])
@@ -514,7 +557,7 @@ class Controller:
 
             for slave in range(1, MODBUS_MAX_SLAVE_ADDRESS + 1):
                 try:
-                    _LOGGER.info("Attempting to query slave " + str(slave))
+                    _LOGGER.info("Attempting to query slave %s", str(slave))
                     modelResponse = await modbus.read_holding_registers(
                         0x1A00, 8, slave_address=slave
                     )
@@ -523,7 +566,7 @@ class Controller:
 
                     if modelResponse.isError():
                         _LOGGER.info(
-                            "Stopped scanning for modbus slaves at slave " + str(slave)
+                            "Stopped scanning for modbus slaves at slave %s", str(slave)
                         )
                         break
 
@@ -544,18 +587,17 @@ class Controller:
 
                     _LOGGER.info("Created inverter")
 
-                    _LOGGER.info("Skyline Model Number is " + inverter.model_number)
-                    _LOGGER.info("Skyline Serial Number is " + inverter.serial_number)
+                    _LOGGER.info("Skyline Model Number is %s", inverter.model_number)
+                    _LOGGER.info("Skyline Serial Number is %s", inverter.serial_number)
 
                     self.inverters.append(inverter)
 
                     self.have_identity_info = True
-                except:
+                except:  # noqa: E722
                     _LOGGER.info(
-                        "Stopped scanning for modbus host "
-                        + host
-                        + " at slave "
-                        + str(slave)
+                        "Stopped scanning with exception for modbus host %s at slave %s",
+                        host,
+                        str(slave),
                     )
                     break
 
@@ -565,12 +607,14 @@ class Controller:
         self.terminate()
 
     def terminate(self):
+        """End the controller."""
         if self.poller_task is not None:
             self.poller_task.cancel()
             self.poller_task = None
             _LOGGER.info("Skyline is no longer polling")
 
     async def initialise(self):
+        """Self intialisation."""
         await self.get_identity_info()
 
     def get_sensor_entities(self):
@@ -608,6 +652,7 @@ class Controller:
 
 
 def registers_to_string(registers, start: int, length: int):
+    """Convert a section of registers into a string."""
     data = ""
     i = 0
     while i < length:
@@ -627,17 +672,20 @@ def registers_to_string(registers, start: int, length: int):
 
 
 def registers_to_signed_32(registers, pos):
+    """Convert a section of registers into a signed 32."""
     regs = [registers[pos], registers[pos + 1]]
     b = struct.pack(">2H", *regs)
     return struct.unpack(">l", b)[0]
 
 
 def register_to_signed_16(register):
+    """Convert a section of registers into a signed 16."""
     b = struct.pack(">H", register)
     return struct.unpack(">h", b)[0]
 
 
 def registers_to_unsigned_32(registers, pos):
+    """Convert a section of registers into a unsigned 32."""
     regs = [registers[pos], registers[pos + 1]]
     b = struct.pack(">2H", *regs)
     return struct.unpack(">L", b)[0]
