@@ -554,52 +554,62 @@ class Controller:
                 host = host.split(sep=":")[0]
 
             modbus = ModbusHost(host=host, port=port)
+            detect_loops = 5  # We want to detect at least one slave on each specified modbus adapter, so retry if we don't
 
-            for slave in range(1, MODBUS_MAX_SLAVE_ADDRESS + 1):
-                try:
-                    _LOGGER.info("Attempting to query slave %s", str(slave))
-                    modelResponse = await modbus.read_holding_registers(
-                        0x1A00, 8, slave_address=slave
-                    )
-
-                    _LOGGER.info("Query complete, querying serial")
-
-                    if modelResponse.isError():
-                        _LOGGER.info(
-                            "Stopped scanning for modbus slaves at slave %s", str(slave)
+            while detect_loops > 0:
+                detect_loops = detect_loops - 1
+                for slave in range(1, MODBUS_MAX_SLAVE_ADDRESS + 1):
+                    try:
+                        _LOGGER.info("Attempting to query slave %s", str(slave))
+                        modelResponse = await modbus.read_holding_registers(
+                            0x1A00, 8, slave_address=slave
                         )
-                        break
 
-                    serialResponse = await modbus.read_holding_registers(
-                        0x1A10, 8, slave_address=slave
-                    )
+                        _LOGGER.info("Query complete, querying serial")
 
-                    _LOGGER.info("Query complete")
+                        if modelResponse.isError():
+                            _LOGGER.info(
+                                "Stopped scanning for modbus slaves at slave %s",
+                                str(slave),
+                            )
+                            break
 
-                    inverter = Inverter(
-                        serial_number=registers_to_string(
-                            serialResponse.registers, 0, 8
-                        ),
-                        model_number=registers_to_string(modelResponse.registers, 0, 8),
-                        slave_address=slave,
-                        host=modbus,
-                    )
+                        serialResponse = await modbus.read_holding_registers(
+                            0x1A10, 8, slave_address=slave
+                        )
 
-                    _LOGGER.info("Created inverter")
+                        _LOGGER.info("Query complete")
 
-                    _LOGGER.info("Skyline Model Number is %s", inverter.model_number)
-                    _LOGGER.info("Skyline Serial Number is %s", inverter.serial_number)
+                        inverter = Inverter(
+                            serial_number=registers_to_string(
+                                serialResponse.registers, 0, 8
+                            ),
+                            model_number=registers_to_string(
+                                modelResponse.registers, 0, 8
+                            ),
+                            slave_address=slave,
+                            host=modbus,
+                        )
 
-                    self.inverters.append(inverter)
+                        _LOGGER.info("Created inverter")
 
-                    self.have_identity_info = True
-                except:  # noqa: E722
-                    _LOGGER.info(
-                        "Stopped scanning with exception for modbus host %s at slave %s",
-                        host,
-                        str(slave),
-                    )
-                    break
+                        _LOGGER.info(
+                            "Skyline Model Number is %s", inverter.model_number
+                        )
+                        _LOGGER.info(
+                            "Skyline Serial Number is %s", inverter.serial_number
+                        )
+                        detect_loops = 0
+                        self.inverters.append(inverter)
+                        self.have_identity_info = True
+                    except:  # noqa: E722
+                        _LOGGER.info(
+                            "Stopped scanning with exception for modbus host %s at slave %s",
+                            host,
+                            str(slave),
+                        )
+                        if detect_loops <= 0:
+                            break
 
     def __del__(self):
         """Log deletion."""
