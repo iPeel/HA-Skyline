@@ -1,12 +1,14 @@
+"""Skyline Select Entity."""
 import logging
 
+from homeassistant.components.select import SelectEntity
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.select import SelectEntity
+
 from .const import DOMAIN
 from .inverter import Inverter
 
@@ -16,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
+    """Create select entities."""
+
     _LOGGER.info("Select add entities callback")
 
     controller = hass.data[DOMAIN]["controller"]
@@ -36,6 +40,7 @@ async def async_setup_entry(
                 "Time based Control",
                 "Backup Supply",
                 "Battery Discharge",
+                "Feed In Excess Solar",
             ],
             registerToChange=0x2100,
             registerSettingsMap=[
@@ -44,6 +49,7 @@ async def async_setup_entry(
                 ["Time based Control", 2],
                 ["Backup Supply", 3],
                 ["Battery Discharge", 4],
+                ["Feed In Excess Solar", 5],
             ],
         )
 
@@ -55,6 +61,8 @@ async def async_setup_entry(
 
 
 class InverterSelectEntity(SelectEntity):
+    """Inverter class."""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -71,6 +79,8 @@ class InverterSelectEntity(SelectEntity):
         registerToChange=None,
         registerSettingsMap=None,
     ) -> None:
+        """Inverter initialiser."""
+
         self.currentValue = None
         self._attr_device_info = inverter.device_info
         self.inverter = inverter
@@ -103,6 +113,7 @@ class InverterSelectEntity(SelectEntity):
             self._attr_entity_category = category
 
     def set_selected_option(self, new_value) -> None:
+        """Set the value from the inverter data."""
         value = None
         if self.register_settings_map is not None:
             for x in self.register_settings_map:
@@ -117,12 +128,10 @@ class InverterSelectEntity(SelectEntity):
             return
 
         _LOGGER.warning(
-            "Option on "
-            + self.name
-            + " has been changed from "
-            + str(self.currentValue)
-            + " to "
-            + str(value)
+            "Option on %s has been changed from %s to %s",
+            self.name,
+            str(self.currentValue),
+            str(value),
         )
 
         self.currentValue = value
@@ -131,6 +140,7 @@ class InverterSelectEntity(SelectEntity):
         self.async_write_ha_state()
 
     async def async_select_option(self, option: str) -> None:
+        """Receive changes from HomeAssistant and push to the inverter."""
         if self.currentValue is not None and self.currentValue == option:
             # avoid noise...
             return
@@ -148,7 +158,16 @@ class InverterSelectEntity(SelectEntity):
         else:
             value = int(option)
 
-        _LOGGER.warning("Changing option on " + self.name + " to " + str(value))
+        if self.register_to_change == 0x2100:
+            if value == 5:
+                _LOGGER.warning("Hybrid work mode is changed to match excess")
+                self.controller.match_feed_in_to_excess_power = True
+                value = 1
+                await self.controller.update_feed_in_excess()
+            else:
+                self.controller.match_feed_in_to_excess_power = False
+
+        _LOGGER.warning("Changing option on %s to %s", self.name, str(value))
 
         await self.controller.set_register(
             self.inverter, self.register_to_change, value

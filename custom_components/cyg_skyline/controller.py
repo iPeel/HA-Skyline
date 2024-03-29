@@ -3,6 +3,7 @@ import asyncio
 import logging
 import math
 import struct
+import time
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -48,21 +49,39 @@ class Controller:
         self.clickhouse_url = ""
         self.clickhouse_is_init = True
         self.aio_http_session = None
+        self.match_feed_in_to_excess_power = False
+        self.last_feed_in_sync = time.time()
+        self.last_excess = -1
+        self.current_state_of_charge = -1
 
         _LOGGER.info("Skyline controller starting")
 
-    def aggregate(self, name: str, value, count: int, trimTo=-1):
+    def aggregate(
+        self,
+        name: str,
+        value,
+        count: int,
+        trimTo=-1,
+        always_aggregate=False,
+        fetch_only=False,
+        insert_only=False,
+    ):
         """Stash a value to an aggregate array and return the average."""
-        if trimTo == -1:
-            trimTo = count
 
-        if name not in self.aggregates:
-            self.aggregates[name] = []
+        if insert_only is True or fetch_only is False:
+            if trimTo == -1:
+                trimTo = count
 
-        while len(self.aggregates[name]) >= trimTo:
-            self.aggregates[name].pop(0)
+            if name not in self.aggregates:
+                self.aggregates[name] = []
 
-        self.aggregates[name].append(value)
+            while len(self.aggregates[name]) >= trimTo:
+                self.aggregates[name].pop(0)
+
+            self.aggregates[name].append(value)
+
+        if insert_only is True:
+            return
 
         t = 0
         num = 0
@@ -72,7 +91,7 @@ class Controller:
             if num == count:
                 break
 
-        if NO_AGGREGATION is True:
+        if NO_AGGREGATION is True and always_aggregate is False:
             return value
 
         return t / num
@@ -133,6 +152,8 @@ class Controller:
         skyline_eps_load = float(0)
         skyline_inverter_load = float(0)
 
+        work_mode = -1
+
         for inverter in self.inverters:
             try:
                 inverter_power_data = await inverter.read_holding_registers(0x1001, 64)
@@ -183,6 +204,8 @@ class Controller:
                 self.sensor_entities[inverter.serial_number + "_soc"].set_native_value(
                     battery_data.registers[0]
                 )
+
+                self.current_state_of_charge = battery_data.registers[0]
 
                 inverter_pv_power = (
                     registers_to_unsigned_32(inverter_power_data.registers, 17)
@@ -357,9 +380,13 @@ class Controller:
                     inverter.serial_number + "_grid_max_feed_in_power"
                 ].set_number_value(grid_config_data.registers[10])
 
+                work_mode = inverter_config_data.registers[0]
+                if work_mode == 1 and self.match_feed_in_to_excess_power is True:
+                    work_mode = 5
+
                 self.select_entities[
                     inverter.serial_number + "_hybrid_work_mode"
-                ].set_selected_option(str(inverter_config_data.registers[0]))
+                ].set_selected_option(str(work_mode))
 
                 self.switch_entities[
                     inverter.serial_number + "_eps_enabled"
@@ -420,8 +447,7 @@ class Controller:
                 #    inverter.serial_number + "_battery_temp"
                 # ].set_native_value(register_to_signed_16(battery_data.registers[1]))
 
-            except Exception as e:  # noqa: E722
-                _LOGGER.info(e)
+            except:  # noqa: E722
                 _LOGGER.info("Error retrieving inverter stats")
 
         self.sensor_entities["skyline_consumer_load"].set_native_value(
@@ -434,6 +460,18 @@ class Controller:
                 2,
             )
         )
+
+        skyline_average_excess_pv_power = self.aggregate(
+            "skyline_average_excess_pv_power",
+            skyline_pv_power - (skyline_eps_load + skyline_grid_tied_load),
+            math.ceil(600 / INVERTER_POLL_INTERVAL_SECONDS),
+            always_aggregate=True,
+        )
+
+        _LOGGER.debug("Average solar excess: %skW", skyline_average_excess_pv_power)
+
+        if work_mode == 5 and time.time() - self.last_feed_in_sync >= 600:
+            await self.update_feed_in_excess()
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
@@ -467,6 +505,45 @@ class Controller:
             )
 
         await self.record_stats_to_clickhouse()
+
+    async def update_feed_in_excess(self):
+        """Set the feed in power to the recent average."""
+        if self.match_feed_in_to_excess_power is False:
+            return
+
+        self.last_feed_in_sync = time.time()
+        to_value = self.aggregate(
+            "skyline_average_excess_pv_power",
+            0,
+            0,
+            fetch_only=True,
+            always_aggregate=True,
+        )
+
+        to_value = (
+            to_value + (float(self.current_state_of_charge - 90) * 0.2)
+        )  # affect the value based around the current Soc, targeting 90% battery with a shift of 2kW per 10 percent.
+
+        to_value = (to_value * 1000) / len(self.inverters)
+        to_value = int(max(to_value, 25))
+
+        _LOGGER.info(
+            "Synchronising feed in to average of solar power: %sW",
+            to_value,
+        )
+
+        if self.last_excess >= 0:
+            change = self.last_excess - int(to_value)
+            if change == 0:
+                _LOGGER.info("No change")
+                return
+
+            if (-100 < change < 100) and int(to_value) != 0:
+                _LOGGER.info("Change of %sW is not enough", change)
+                return
+
+        self.last_excess = int(to_value)
+        await self.set_register(self.inverters[0], 0x30BA, int(to_value), no_poll=True)
 
     async def record_stats_to_clickhouse(self):
         """Record all our sensors to a clickhouse database if configured."""
@@ -532,13 +609,16 @@ class Controller:
         except:  # noqa: E722
             _LOGGER.error("Clickhouse command failed: %s", cmd)
 
-    async def set_register(self, inverter: Inverter, register: int, value: int):
+    async def set_register(
+        self, inverter: Inverter, register: int, value: int, no_poll=False
+    ):
         """Set a modbus register from a change in HA."""
         try:
             await inverter.write_register(register, value)
         except:  # noqa: E722
             _LOGGER.info("Pymodbus still raising errors on register writes")
-        await self.poll_inverters()
+        if no_poll is False:
+            await self.poll_inverters()
 
     async def update_ha_state(self):
         """Schedule an update for all other included entities."""

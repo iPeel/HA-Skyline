@@ -1,13 +1,15 @@
+"""Inverter Binary Sensor."""
 import logging
+
 from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
     BinarySensorDeviceClass,
+    BinarySensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from .const import DOMAIN
 from .inverter import Inverter
 
@@ -17,6 +19,8 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
+    """Set up binary sensors."""
+
     _LOGGER.info("Number add entities callback")
 
     controller = hass.data[DOMAIN]["controller"]
@@ -54,6 +58,8 @@ async def async_setup_entry(
 
 
 class InverterBinarySensorEntity(BinarySensorEntity):
+    """A binary sensor for inverter entities."""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -65,6 +71,7 @@ class InverterBinarySensorEntity(BinarySensorEntity):
         category=None,
         deviceClass=None,
     ) -> None:
+        """Init binary sensor entity."""
         self.currentValue = None
         self._attr_device_info = inverter.device_info
         self.inverter = inverter
@@ -92,6 +99,7 @@ class InverterBinarySensorEntity(BinarySensorEntity):
             self._attr_entity_category = category
 
     def set_binary_value(self, new_state: bool) -> None:
+        """Set the HomeAssistant sensor based on inverter."""
         newValue = new_state
 
         if self.currentValue is not None and self.currentValue == newValue:

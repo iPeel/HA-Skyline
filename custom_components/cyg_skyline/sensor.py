@@ -1,24 +1,24 @@
+"""Skyline diagnostics sensors."""
 import logging
+
 from homeassistant.components.sensor import (
-    SensorEntity,
     SensorDeviceClass,
+    SensorEntity,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-
 from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
-    UnitOfEnergy,
-    UnitOfPower,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfEnergy,
+    UnitOfPower,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.entity import generate_entity_id
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .inverter import Inverter
@@ -327,7 +327,7 @@ async def async_setup_entry(
             inverter,
             "Battery Current",
             "battery_current",
-            "mdi:current-ac",
+            "mdi:current-dc",
             unitOfMeasurement=UnitOfElectricCurrent.AMPERE,
             deviceClass=SensorDeviceClass.CURRENT,
             decimals=2,
@@ -357,7 +357,7 @@ async def async_setup_entry(
             inverter,
             "MPPT1 Current",
             "mppt1_current",
-            "mdi:current-ac",
+            "mdi:current-dc",
             unitOfMeasurement=UnitOfElectricCurrent.AMPERE,
             deviceClass=SensorDeviceClass.CURRENT,
             decimals=2,
@@ -372,7 +372,7 @@ async def async_setup_entry(
             inverter,
             "MPPT2 Current",
             "mppt2_current",
-            "mdi:current-ac",
+            "mdi:current-dc",
             unitOfMeasurement=UnitOfElectricCurrent.AMPERE,
             deviceClass=SensorDeviceClass.CURRENT,
             decimals=2,
@@ -563,6 +563,8 @@ async def async_setup_entry(
 
 
 class InverterSensorEntity(SensorEntity):
+    """The main Inverter sensor."""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -577,6 +579,7 @@ class InverterSensorEntity(SensorEntity):
         decimals=-1,
         category=None,
     ) -> None:
+        """Inverter sensor intialiser."""
         self.currentValue = None
 
         if inverter is not None:
@@ -624,6 +627,7 @@ class InverterSensorEntity(SensorEntity):
             self._attr_suggested_display_precision = decimals
 
     def set_native_value(self, new_state) -> None:
+        """Set the HA value from the modbus response."""
         if self.currentValue is not None and self.currentValue == new_state:
             # avoid noise...
             return
