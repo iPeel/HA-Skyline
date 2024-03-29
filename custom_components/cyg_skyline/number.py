@@ -1,11 +1,14 @@
+"""CYG Skyline Number Entities."""
 import logging
+
+from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.number import NumberEntity
+
 from .const import DOMAIN, MAX_FEED_IN_POWER_W
 from .inverter import Inverter
 
@@ -15,6 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
+    """Set up entities on intialisation."""
     _LOGGER.info("Number add entities callback")
 
     controller = hass.data[DOMAIN]["controller"]
@@ -34,7 +38,7 @@ async def async_setup_entry(
             maxValue=6,
             stepSize=0.5,
             valueMultiplier=1000,
-            adjustForParallel=True
+            adjustForParallel=True,
         )
 
         controller.number_entities[
@@ -51,7 +55,7 @@ async def async_setup_entry(
             maxValue=6,
             stepSize=0.5,
             valueMultiplier=1000,
-            adjustForParallel=True
+            adjustForParallel=True,
         )
 
         controller.number_entities[
@@ -68,7 +72,7 @@ async def async_setup_entry(
             maxValue=6,
             stepSize=0.1,
             valueMultiplier=1000,
-            adjustForParallel=True
+            adjustForParallel=True,
         )
 
         controller.number_entities[
@@ -85,7 +89,7 @@ async def async_setup_entry(
             maxValue=MAX_FEED_IN_POWER_W / 1000,
             stepSize=0.5,
             valueMultiplier=1000,
-            adjustForParallel=True
+            adjustForParallel=True,
         )
 
         controller.number_entities[
@@ -134,6 +138,8 @@ async def async_setup_entry(
 
 
 class InverterNumberEntity(NumberEntity):
+    """Number entity for inverters."""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -151,8 +157,9 @@ class InverterNumberEntity(NumberEntity):
         category=None,
         registerToChange=None,
         valueMultiplier=1,
-        adjustForParallel=False
+        adjustForParallel=False,
     ) -> None:
+        """Initialise a number entity."""
         self.currentValue = None
         self.inverter = inverter
         self._attr_device_info = inverter.device_info
@@ -173,15 +180,19 @@ class InverterNumberEntity(NumberEntity):
         self._attr_native_device_class = deviceClass
         self._attr_state_class = stateClass
         self._attr_icon = icon
+        self.mode = NumberMode.BOX
 
         if category is not None:
             self._attr_entity_category = category
 
         self._attr_native_min_value = minValue
 
-        if (adjustForParallel == True):
+        if adjustForParallel is True:
             self._attr_native_max_value = maxValue * len(self.controller.inverters)
-            _LOGGER.info("setting maximum value to " + str(maxValue * len(self.controller.inverters)))
+            _LOGGER.info(
+                "Setting maximum value to %s",
+                str(maxValue * len(self.controller.inverters)),
+            )
         else:
             self._attr_native_max_value = maxValue
 
@@ -192,10 +203,13 @@ class InverterNumberEntity(NumberEntity):
 
         self._attr_entity_registry_visible_default = False
         self.adjust_for_parallel = adjustForParallel
+
     def set_native_value(self, value: float) -> None:
+        """Set the native value."""
         _LOGGER.info("Set Native Value")
 
     async def async_set_native_value(self, value: float) -> None:
+        """Set the value from a HA interaction."""
         _LOGGER.info("Set Async Value")
         if self.currentValue is not None and self.currentValue == value:
             # avoid noise...
@@ -203,17 +217,20 @@ class InverterNumberEntity(NumberEntity):
 
         # self.currentValue = value LEAVE THIS UNCHANGED, let the next poller confirm the change instead.
         await self.controller.set_register(
-            self.inverter, self.register_to_change, int(value * self.get_value_multiplier())
+            self.inverter,
+            self.register_to_change,
+            int(value * self.get_value_multiplier()),
         )
 
     def get_value_multiplier(self) -> float:
-        if self.adjust_for_parallel == True and len(self.controller.inverters) > 1:
+        """Get the amount to m,ultiply the value from based on how many parallel inverters there are."""
+        if self.adjust_for_parallel is True and len(self.controller.inverters) > 1:
             return self.value_multiplier / len(self.controller.inverters)
 
         return self.value_multiplier
 
     def set_number_value(self, new_state: float) -> None:
-
+        """Set the HA value from the inverter's modbus response."""
         newValue = new_state / self.get_value_multiplier()
 
         if self.currentValue is not None and self.currentValue == newValue:
