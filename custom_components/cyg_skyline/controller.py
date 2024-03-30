@@ -477,7 +477,10 @@ class Controller:
         )
 
         if work_mode == 5 and time.time() - self.last_feed_in_poll >= 60:
-            await self.update_feed_in_excess()
+            try:
+                await self.update_feed_in_excess()
+            except Exception as e:
+                _LOGGER.error(e)
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
@@ -549,14 +552,19 @@ class Controller:
                 _LOGGER.info("Change of %sW is not enough", change)
                 return
 
-        if (-750 < change < 750) and time.time() - self.last_feed_in_sync < 600:
-            _LOGGER.info("Change of %sW is not enough for fast update", change)
-            return
+            if (-750 < change < 750) and time.time() - self.last_feed_in_sync < 600:
+                _LOGGER.info("Change of %sW is not enough for fast update", change)
+                return
 
         to_value = int(math.ceil(float(to_value) / 50.0)) * 50
 
         self.last_excess = to_value
         self.last_feed_in_sync = time.time()
+
+        _LOGGER.info(
+            "Setting feed in to %sW",
+            to_value,
+        )
         await self.set_register(self.inverters[0], 0x30BA, int(to_value), no_poll=True)
 
     async def record_stats_to_clickhouse(self):
