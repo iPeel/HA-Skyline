@@ -534,13 +534,13 @@ class Controller:
                 to_value + (float(self.current_state_of_charge - 90) * 0.3)
             )  # affect the value based around the current Soc, targeting 90% battery with a shift of 3kW per 10 percent.
 
-        to_value = (to_value * 1000) / len(self.inverters)
-        to_value = int(max(to_value, 50))
-
         _LOGGER.info(
-            "Synchronising feed in to average of solar power: %sW",
+            "Synchronising feed in to average of solar power: %skW",
             to_value,
         )
+
+        to_value = (to_value * 1000) / len(self.inverters)
+        to_value = int(max(to_value, 50))
 
         if self.last_excess >= 0:
             change = self.last_excess - int(to_value)
@@ -549,11 +549,13 @@ class Controller:
                 return
 
             if (-100 < change < 100) and int(to_value) != 0:
-                _LOGGER.info("Change of %sW is not enough", change)
+                _LOGGER.info("Change of %sW per inverter  is not enough", change)
                 return
 
-            if (-750 < change < 750) and time.time() - self.last_feed_in_sync < 600:
-                _LOGGER.info("Change of %sW is not enough for fast update", change)
+            if (-500 < change < 500) and time.time() - self.last_feed_in_sync < 600:
+                _LOGGER.info(
+                    "Change of %sW per inverter is not enough for fast update", change
+                )
                 return
 
         to_value = int(math.ceil(float(to_value) / 50.0)) * 50
