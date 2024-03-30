@@ -51,6 +51,7 @@ class Controller:
         self.aio_http_session = None
         self.match_feed_in_to_excess_power = False
         self.last_feed_in_sync = time.time()
+        self.last_feed_in_poll = time.time()
         self.last_excess = -1
         self.current_state_of_charge = -1
 
@@ -475,7 +476,7 @@ class Controller:
             )
         )
 
-        if work_mode == 5 and time.time() - self.last_feed_in_sync >= 60:
+        if work_mode == 5 and time.time() - self.last_feed_in_poll >= 60:
             await self.update_feed_in_excess()
 
         if len(self.inverters) > 1:
@@ -513,6 +514,7 @@ class Controller:
 
     async def update_feed_in_excess(self):
         """Set the feed in power to the recent average."""
+        self.last_feed_in_poll = time.time()
         if self.match_feed_in_to_excess_power is False:
             return
 
