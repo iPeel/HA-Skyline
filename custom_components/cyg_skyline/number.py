@@ -87,7 +87,7 @@ async def async_setup_entry(
             registerToChange=0x30BA,
             minValue=0,
             maxValue=MAX_FEED_IN_POWER_W / 1000,
-            stepSize=0.5,
+            stepSize=0.1,
             valueMultiplier=1000,
             adjustForParallel=True,
         )
