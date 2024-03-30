@@ -468,7 +468,12 @@ class Controller:
             always_aggregate=True,
         )
 
-        _LOGGER.debug("Average solar excess: %skW", skyline_average_excess_pv_power)
+        self.sensor_entities["skyline_average_excess_pv_power"].set_native_value(
+            round(
+                skyline_average_excess_pv_power,
+                2,
+            )
+        )
 
         if work_mode == 5 and time.time() - self.last_feed_in_sync >= 600:
             await self.update_feed_in_excess()
@@ -511,7 +516,6 @@ class Controller:
         if self.match_feed_in_to_excess_power is False:
             return
 
-        self.last_feed_in_sync = time.time()
         to_value = self.aggregate(
             "skyline_average_excess_pv_power",
             0,
@@ -520,9 +524,10 @@ class Controller:
             always_aggregate=True,
         )
 
-        to_value = (
-            to_value + (float(self.current_state_of_charge - 90) * 0.2)
-        )  # affect the value based around the current Soc, targeting 90% battery with a shift of 2kW per 10 percent.
+        if to_value > 0:  # only account for SoC if we actually have excess solar.
+            to_value = (
+                to_value + (float(self.current_state_of_charge - 90) * 0.2)
+            )  # affect the value based around the current Soc, targeting 90% battery with a shift of 2kW per 10 percent.
 
         to_value = (to_value * 1000) / len(self.inverters)
         to_value = int(max(to_value, 25))
@@ -543,6 +548,7 @@ class Controller:
                 return
 
         self.last_excess = int(to_value)
+        self.last_feed_in_sync = time.time()
         await self.set_register(self.inverters[0], 0x30BA, int(to_value), no_poll=True)
 
     async def record_stats_to_clickhouse(self):
