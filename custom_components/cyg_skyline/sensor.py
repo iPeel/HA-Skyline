@@ -482,6 +482,20 @@ async def async_setup_entry(
         decimals=2,
     )
 
+    controller.sensor_entities[
+        "skyline_average_excess_pv_power"
+    ] = InverterSensorEntity(
+        hass,
+        controller,
+        None,
+        "Skyline Excess PV Power",
+        "average_excess_pv_power",
+        "mdi:sun-wireless",
+        unitOfMeasurement=UnitOfPower.KILO_WATT,
+        deviceClass=SensorDeviceClass.POWER,
+        decimals=2,
+    )
+
     if len(controller.inverters) > 1:
         controller.sensor_entities["skyline_pv_power"] = InverterSensorEntity(
             hass,
