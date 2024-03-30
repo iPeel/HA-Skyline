@@ -465,7 +465,7 @@ class Controller:
         skyline_average_excess_pv_power = self.aggregate(
             "skyline_average_excess_pv_power",
             skyline_pv_power - (skyline_eps_load + skyline_grid_tied_load),
-            math.ceil(600 / INVERTER_POLL_INTERVAL_SECONDS),
+            math.ceil(300 / INVERTER_POLL_INTERVAL_SECONDS),
             always_aggregate=True,
         )
 
