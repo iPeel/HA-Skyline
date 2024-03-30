@@ -49,6 +49,14 @@ Note when inverters are in parallel, inverters will report their respective powe
 
 When more than one inverter is discovered, some additional entities are registered which provide summed power for solar output, inverter output and grid / house / EPS demand. These are integration entities and not linked to any specific device so are only visible under the main integration entities view.
 
+## Feed In Excess Solar mode
+
+There's a work mode specific to this integration called "Feed In Excess Solar". This attempts to overcome issues with parallel inverters where inverters de-rate solar when the battery is full or restricted to a specific charge rate or SoC, making it difficult to export excess solar. When enabled, this mode sets the inverter work mode to "Feed In Priority" then each 10 minute period tweaks the Max Feed In Power setting based on the average of excess solar over the previous 10 minutes. Excess solar is calculated based on the average PV power minus the average consumption ( EPS + grid tied loads ). The amound of feed in is compensated to attempt to keep the battery SoC around a 90% setpoint, with feed in power increased or decreased 2kW per 10% SoC difference.
+
+There is an entity "Skyline Excess PV Power" which provides the current calculation of excess over the last 10 minutes, note this entity can be negative if PV is less than demand, and this value does not display any adjustments for SoC balancing.
+
+Note this work mode will reset back to Feed In Priority if Home Assistant or the integration is reloaded.
+
 ## Current Limitations
 
 Polling intervals are fixed at 10 seconds since the previous poll, this seems "real-time" enough.
