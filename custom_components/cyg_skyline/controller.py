@@ -475,7 +475,7 @@ class Controller:
             )
         )
 
-        if work_mode == 5 and time.time() - self.last_feed_in_sync >= 600:
+        if work_mode == 5 and time.time() - self.last_feed_in_sync >= 60:
             await self.update_feed_in_excess()
 
         if len(self.inverters) > 1:
@@ -546,6 +546,10 @@ class Controller:
             if (-100 < change < 100) and int(to_value) != 0:
                 _LOGGER.info("Change of %sW is not enough", change)
                 return
+
+        if (-750 < change < 750) and time.time() - self.last_feed_in_sync < 600:
+            _LOGGER.info("Change of %sW is not enough for fast update", change)
+            return
 
         to_value = int(math.ceil(float(to_value) / 50.0)) * 50
 
