@@ -526,8 +526,8 @@ class Controller:
 
         if to_value > 0:  # only account for SoC if we actually have excess solar.
             to_value = (
-                to_value + (float(self.current_state_of_charge - 90) * 0.2)
-            )  # affect the value based around the current Soc, targeting 90% battery with a shift of 2kW per 10 percent.
+                to_value + (float(self.current_state_of_charge - 90) * 0.3)
+            )  # affect the value based around the current Soc, targeting 90% battery with a shift of 3kW per 10 percent.
 
         to_value = (to_value * 1000) / len(self.inverters)
         to_value = int(max(to_value, 50))
