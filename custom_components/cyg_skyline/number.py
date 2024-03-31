@@ -180,7 +180,7 @@ class InverterNumberEntity(NumberEntity):
         self._attr_native_device_class = deviceClass
         self._attr_state_class = stateClass
         self._attr_icon = icon
-        self.mode = NumberMode.BOX
+        self._attr_mode = NumberMode.BOX
 
         if category is not None:
             self._attr_entity_category = category
