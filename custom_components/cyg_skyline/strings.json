@@ -18,6 +18,17 @@
       "already_setup": "Only one hub allowed, configure existing using a CSV list of IP addresses"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "host": "Modbus host(s)",
+          "port": "Default port",
+          "clickhouse_url": "Clickhouse data URL",
+          "excess_target_soc": "Excess balancer target SoC",
+          "excess_rate_soc": "Excess balancer kW per 10%",
+          "excess_min_feed_in_rate": "Excess idle feed in watts"
+        }}}},
   "entity": {
     "sensor": {
       "soc": {
