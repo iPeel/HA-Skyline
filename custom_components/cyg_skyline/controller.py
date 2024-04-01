@@ -58,6 +58,10 @@ class Controller:
         self.excess_target_soc = 90
         self.excess_rate_soc = 0.3
         self.excess_min_feed_in_rate = 0
+        self.excess_rapid_change_threshold = 500
+        self.excess_slow_change_threshold = 100
+        self.excess_slow_change_period_seconds = 600
+        self.excess_averaging_period_seconds = 300
 
         if "match_feed_in_to_excess_power" in entry.options:
             self.match_feed_in_to_excess_power = bool(
@@ -494,7 +498,9 @@ class Controller:
         skyline_average_excess_pv_power = self.aggregate(
             "skyline_average_excess_pv_power",
             skyline_pv_power - (skyline_eps_load + skyline_grid_tied_load),
-            math.ceil(300 / INVERTER_POLL_INTERVAL_SECONDS),
+            math.ceil(
+                self.excess_averaging_period_seconds / INVERTER_POLL_INTERVAL_SECONDS
+            ),
             always_aggregate=True,
         )
 
@@ -578,7 +584,7 @@ class Controller:
             )  # affect the value based around the current Soc, targeting 90% battery with a shift of 3kW per 10 percent.
 
         _LOGGER.info(
-            "Synchronising feed in to average of solar power: %skW and balancing to %s pc SoC with rate of %s per 10 pc",
+            "Synchronising feed in to average of solar power: %skW and balancing to %s pc SoC with rate of %s per pc",
             to_value,
             self.excess_target_soc,
             self.excess_rate_soc,
@@ -593,11 +599,23 @@ class Controller:
                 _LOGGER.info("No change")
                 return
 
-            if (-100 < change < 100) and int(to_value) > self.excess_min_feed_in_rate:
+            if (
+                (0 - self.excess_slow_change_threshold)
+                < change
+                < self.excess_slow_change_threshold
+            ) and int(to_value) > self.excess_min_feed_in_rate:
                 _LOGGER.info("Change of %sW per inverter  is not enough", change)
                 return
 
-            if (-500 < change < 500) and time.time() - self.last_feed_in_sync < 600:
+            if (
+                (
+                    (0 - self.excess_rapid_change_threshold)
+                    < change
+                    < self.excess_rapid_change_threshold
+                )
+                and time.time() - self.last_feed_in_sync
+                < self.excess_slow_change_period_seconds
+            ):
                 _LOGGER.info(
                     "Change of %sW per inverter is not enough for fast update", change
                 )
@@ -612,6 +630,7 @@ class Controller:
             "Setting feed in to %sW",
             to_value,
         )
+
         await self.set_register(self.inverters[0], 0x30BA, int(to_value), no_poll=True)
 
     async def record_stats_to_clickhouse(self):
