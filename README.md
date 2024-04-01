@@ -55,7 +55,7 @@ There is a "Match Feed In To Excess Solar" setting which attempts to overcome is
 
 The parameters controlling this mode can be set by configuring the integration, there is a value to determine the target SoC percentage to balance around, the amount to increase or decrease solar by to maintain the setpoint, and the amount of minimum feed in power when no excess is available. You can also set these parameters in runtime by calling the "cyg_skyline.set_excess_params" service with a payload containing any parameters you want to change ( it's not necessary to include keys you do not want to change ):
 
-![image](https://github.com/iPeel/HA-Skyline/assets/49528212/4ce37245-79ef-4eff-b008-08ef98dc8bca)
+![image](https://github.com/iPeel/HA-Skyline/assets/49528212/27cbc741-ab14-4062-8eed-12999443dbf3)
 
 There is an entity "Skyline Excess PV Power" which provides the current calculation of excess over the last 10 minutes, note this entity can be negative if PV is less than demand, and this value does not display any adjustments for SoC balancing.
 
