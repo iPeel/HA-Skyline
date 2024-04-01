@@ -35,6 +35,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+def setup(hass: HomeAssistant, entry: ConfigEntry):
+    """Set up is called when Home Assistant is loading our component."""
+
+    def handle_set_setpoint(call):
+        if "target_soc_precent" in call.data:
+            hass.data[DOMAIN]["controller"].excess_target_soc = call.data[
+                "target_soc_precent"
+            ]
+
+        if "target_soc_rate" in call.data:
+            hass.data[DOMAIN]["controller"].excess_rate_soc = (
+                float(call.data["target_soc_rate"]) / 10
+            )
+
+        if "min_feed_in_rate" in call.data:
+            hass.data[DOMAIN]["controller"].excess_min_feed_in_rate = int(
+                call.data["min_feed_in_rate"]
+            )
+
+    hass.services.register(DOMAIN, "set_excess_params", handle_set_setpoint)
+
+    _LOGGER.info("Registered Inverter services")
+
+    return True
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
 
