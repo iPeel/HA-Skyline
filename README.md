@@ -57,6 +57,19 @@ The parameters controlling this mode can be set by configuring the integration, 
 
 ![image](https://github.com/iPeel/HA-Skyline/assets/49528212/27cbc741-ab14-4062-8eed-12999443dbf3)
 
+The full list of available keys are:
+
+Key | Description
+--- | -----------
+target_soc_percent | The setpoint os State of Charge to attempt to keep the battery at, the average excess yield is adjusted to keep the battery at this setpoint, default is as configured.
+target_soc_rate | The kW per 10 percent to use to maintain the SoC setpoint, e.g. a value of 1 would vary the feed in rate by 1Kw if the SoC was 10 percent off the target, default is as configured.
+min_feed_in_rate | If there is no excess solar, this is the value the feed-in will be set to per inverter, default is as configured.
+rapid_change_threshold | If the excess with SoC adjustment is off by more than this the an adjustment will be made within 60 seconds, default is 500w.
+slow_change_threshold | If the excess with SoC adjustment is less than this then no change will be made, unless the amount of excess is zero, default is 100w.
+slow_change_period_seconds | The amount of time to wait since the last adjustment for majing any minor adjustments greater than the slow_change_threshold, default is 600 seconds.
+averaging_period_seconds | The amount of time in seconds to average solar and demand over, default is 300 seconds.
+
+
 There is an entity "Skyline Excess PV Power" which provides the current calculation of excess over the last 10 minutes, note this entity can be negative if PV is less than demand, and this value does not display any adjustments for SoC balancing.
 
 ## Current Limitations
