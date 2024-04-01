@@ -51,11 +51,13 @@ When more than one inverter is discovered, some additional entities are register
 
 ## Feed In Excess Solar mode
 
-There's a work mode specific to this integration called "Feed In Excess Solar". This attempts to overcome issues with parallel inverters where inverters de-rate solar when the battery is full or restricted to a specific charge rate or SoC, making it difficult to export excess solar. When enabled, this mode sets the inverter work mode to "Feed In Priority" then each 10 minute period tweaks the Max Feed In Power setting based on the average of excess solar over the previous 10 minutes. Excess solar is calculated based on the average PV power minus the average consumption ( EPS + grid tied loads ). The amound of feed in is compensated to attempt to keep the battery SoC around a 90% setpoint, with feed in power increased or decreased 2kW per 10% SoC difference. This mode ALWAYS feeds in some power by design at 50w per inverter, so if there is zero excess then feed in power is set to 50w. This is so that there will always be a little "push" on the grid to overcome the inverter's inherent lack of dynamic power control.
+There is a "Match Feed In To Excess Solar" setting which attempts to overcome issues with parallel inverters where inverters de-rate solar when the battery is full or restricted to a specific charge rate or SoC, making it difficult to export excess solar. When enabled and the inverter is in "Feed In Priority" mode, each 10 minute period the Max Feed In Power setting is tweaked based on the average of excess solar over the previous 10 minutes. Excess solar is calculated based on the average PV power minus the average consumption ( EPS + grid tied loads ). The amount of feed in is compensated to attempt to keep the battery SoC around a setpoint, with feed in power increased or decreased based on a parameter per 10% SoC difference. This mode can also always feed in some power by a specified amount even when there is no excess, so that there will always be a little "push" on the grid to overcome the inverter's inherent lack of dynamic power control.
+
+The parameters controlling this mode can be set by configuring the integration, there is a value to determine the target SoC percentage to balance around, the amount to increase or decrease solar by to maintain the setpoint, and the amount of minimum feed in power when no excess is available. You can also set these parameters in runtime by calling the "cyg_skyline.set_excess_params" service with a payload containing any parameters you want to change ( it's not necessary to include keys you do not want to change ):
+
+![image](https://github.com/iPeel/HA-Skyline/assets/49528212/4ce37245-79ef-4eff-b008-08ef98dc8bca)
 
 There is an entity "Skyline Excess PV Power" which provides the current calculation of excess over the last 10 minutes, note this entity can be negative if PV is less than demand, and this value does not display any adjustments for SoC balancing.
-
-Note this work mode will reset back to Feed In Priority if Home Assistant or the integration is reloaded.
 
 ## Current Limitations
 
