@@ -4,25 +4,22 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from pymodbus.client import AsyncModbusTcpClient
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry, OptionsFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.config_entries import ConfigEntry, OptionsFlow
 
 from .const import DOMAIN
-
-# from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from pymodbus.client import AsyncModbusTcpClient
-
 
 _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required("host", default="192.168.1.254", description="Host(s)"): str,
-        vol.Required("port", default=502, description="Port"): int
+        vol.Required("port", default=502, description="Port"): int,
     }
 )
 
@@ -40,6 +37,7 @@ class ModbusHub:
         self.port = port
 
     async def checkHost(self, host, port) -> bool:
+        """Test we can access the configured host."""
         try:
             client = AsyncModbusTcpClient(host, port)
             await client.connect()
@@ -59,8 +57,8 @@ class ModbusHub:
 
                 serial = serial + chr(c) + chr(f)
 
-            _LOGGER.info("Connected to inverter serial number " + serial)
-        except:
+            _LOGGER.info("Connected to inverter serial number %s", serial)
+        except:  # noqa: E722
             return False
 
         return True
@@ -69,13 +67,13 @@ class ModbusHub:
         """Test if we can communicate with the host."""
 
         for host in self.hosts:
-            _LOGGER.info("Scanning for slaves on modbus host " + host)
+            _LOGGER.info("Scanning for slaves on modbus host %s", host)
             port = self.port
             if ":" in host:
                 port = int(host.split(sep=":")[1])
                 host = host.split(sep=":")[0]
 
-            if await self.checkHost(host, port) == False:
+            if await self.checkHost(host, port) is False:
                 return False
 
         return True
@@ -98,8 +96,6 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for CYG Skyline."""
-
-    VERSION = 1
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -129,7 +125,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     def async_get_options_flow(
-        config_entry: ConfigEntry,
+        config_entry: ConfigEntry,  # noqa: N805
     ) -> OptionsFlow:
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
@@ -144,6 +140,8 @@ class InvalidAuth(HomeAssistantError):
 
 
 class OptionsFlowHandler(OptionsFlow):
+    """Skyline Options Flow handler."""
+
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow."""
         self.config_entry = config_entry
@@ -151,10 +149,11 @@ class OptionsFlowHandler(OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
+        """Skyline Options Flow handler intiialiser."""
         errors: dict[str, str] = {}
         if user_input is not None:
             try:
-                info = await validate_input(self.hass, user_input)
+                await validate_input(self.hass, user_input)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except InvalidAuth:
@@ -163,10 +162,11 @@ class OptionsFlowHandler(OptionsFlow):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
-                self.config_entry.version = 1
+                # self.config_entry.version = 1
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data=user_input,
+                    options=self.config_entry.options,
                     title="Modbus TCP-RTU on " + user_input["host"],
                 )
                 return self.async_create_entry(
@@ -178,18 +178,29 @@ class OptionsFlowHandler(OptionsFlow):
         if "clickhouse_url" in self.config_entry.data:
             clickhouse_url = self.config_entry.data["clickhouse_url"]
 
+        excess_target_soc = 90
+        if "excess_target_soc" in self.config_entry.data:
+            excess_target_soc = self.config_entry.data["excess_target_soc"]
+        excess_rate_soc = 3
+        if "excess_rate_soc" in self.config_entry.data:
+            excess_rate_soc = self.config_entry.data["excess_rate_soc"]
 
-        placeholders: dict[str, str] = {"host": "Hosts(s)","port": "Default TCP Port","clickhouse_url": "ClickHouse Server URL"}
+        excess_min_feed_in_rate = 0
+        if "excess_min_feed_in_rate" in self.config_entry.data:
+            excess_min_feed_in_rate = self.config_entry.data["excess_min_feed_in_rate"]
 
         return self.async_show_form(
             step_id="init",
-
-            description_placeholders=placeholders,
             data_schema=vol.Schema(
                 {
                     vol.Required("host", default=self.config_entry.data["host"]): str,
                     vol.Required("port", default=self.config_entry.data["port"]): int,
-                    vol.Optional("clickhouse_url", default=clickhouse_url, description="Clickhouse URL"):str
+                    vol.Optional("clickhouse_url", default=clickhouse_url): str,
+                    vol.Optional("excess_target_soc", default=excess_target_soc): int,
+                    vol.Optional("excess_rate_soc", default=excess_rate_soc): int,
+                    vol.Optional(
+                        "excess_min_feed_in_rate", default=excess_min_feed_in_rate
+                    ): int,
                 }
             ),
             errors=errors,

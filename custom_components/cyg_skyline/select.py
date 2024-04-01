@@ -40,7 +40,6 @@ async def async_setup_entry(
                 "Time based Control",
                 "Backup Supply",
                 "Battery Discharge",
-                "Feed In Excess Solar",
             ],
             registerToChange=0x2100,
             registerSettingsMap=[
@@ -49,7 +48,6 @@ async def async_setup_entry(
                 ["Time based Control", 2],
                 ["Backup Supply", 3],
                 ["Battery Discharge", 4],
-                ["Feed In Excess Solar", 5],
             ],
         )
 
@@ -157,15 +155,6 @@ class InverterSelectEntity(SelectEntity):
                     break
         else:
             value = int(option)
-
-        if self.register_to_change == 0x2100:
-            if value == 5:
-                _LOGGER.warning("Hybrid work mode is changed to match excess")
-                self.controller.match_feed_in_to_excess_power = True
-                value = 1
-                await self.controller.update_feed_in_excess()
-            else:
-                self.controller.match_feed_in_to_excess_power = False
 
         _LOGGER.warning("Changing option on %s to %s", self.name, str(value))
 

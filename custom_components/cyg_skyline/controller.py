@@ -1,5 +1,6 @@
 """Skyline communication and stats collection."""
 import asyncio
+import contextlib
 import logging
 import math
 import struct
@@ -54,6 +55,32 @@ class Controller:
         self.last_feed_in_poll = time.time()
         self.last_excess = -1
         self.current_state_of_charge = -1
+        self.excess_target_soc = 90
+        self.excess_rate_soc = 0.3
+        self.excess_min_feed_in_rate = 0
+
+        if "match_feed_in_to_excess_power" in entry.options:
+            self.match_feed_in_to_excess_power = bool(
+                entry.options["match_feed_in_to_excess_power"]
+            )
+            _LOGGER.info(
+                "Found match feed in to excess power setting of %s",
+                entry.options["match_feed_in_to_excess_power"],
+            )
+        else:
+            _LOGGER.info(
+                "Defaulting feed in to excess power setting of %s",
+                self.match_feed_in_to_excess_power,
+            )
+
+        if "excess_target_soc" in entry.data:
+            self.excess_target_soc = int(entry.data["excess_target_soc"])
+
+        if "excess_rate_soc" in entry.data:
+            self.excess_rate_soc = float(entry.data["excess_rate_soc"]) / 10
+
+        if "excess_min_feed_in_rate" in entry.data:
+            self.excess_min_feed_in_rate = int(entry.data["excess_min_feed_in_rate"])
 
         _LOGGER.info("Skyline controller starting")
 
@@ -382,8 +409,6 @@ class Controller:
                 ].set_number_value(grid_config_data.registers[10])
 
                 work_mode = inverter_config_data.registers[0]
-                if work_mode == 1 and self.match_feed_in_to_excess_power is True:
-                    work_mode = 5
 
                 self.select_entities[
                     inverter.serial_number + "_hybrid_work_mode"
@@ -443,6 +468,10 @@ class Controller:
                     register_to_signed_16(inverter_power_data.registers[27])
                 )
 
+                self.switch_entities[
+                    inverter.serial_number + "_match_feed_in_to_excess_power"
+                ].set_selected_option(self.match_feed_in_to_excess_power)
+
                 # No point in the below as the inverter is always returning zero until Skyline fix it.
                 # self.sensor_entities[
                 #    inverter.serial_number + "_battery_temp"
@@ -476,11 +505,13 @@ class Controller:
             )
         )
 
-        if work_mode == 5 and time.time() - self.last_feed_in_poll >= 60:
-            try:
+        if (
+            work_mode == 1
+            and self.match_feed_in_to_excess_power is True
+            and time.time() - self.last_feed_in_poll >= 60
+        ):
+            with contextlib.suppress(Exception):
                 await self.update_feed_in_excess()
-            except Exception as e:
-                _LOGGER.error(e)
 
         if len(self.inverters) > 1:
             self.sensor_entities["skyline_pv_power"].set_native_value(
@@ -515,6 +546,14 @@ class Controller:
 
         await self.record_stats_to_clickhouse()
 
+    async def set_feed_in_excess(self, setting: bool):
+        """Update the feed in excess setting."""
+        self.match_feed_in_to_excess_power = setting
+
+        options = {"match_feed_in_to_excess_power": setting}
+
+        self.hass.config_entries.async_update_entry(self.config, options=options)
+
     async def update_feed_in_excess(self):
         """Set the feed in power to the recent average."""
         self.last_feed_in_poll = time.time()
@@ -531,24 +570,30 @@ class Controller:
 
         if to_value > 0:  # only account for SoC if we actually have excess solar.
             to_value = (
-                to_value + (float(self.current_state_of_charge - 90) * 0.3)
+                to_value
+                + (
+                    float(self.current_state_of_charge - self.excess_target_soc)
+                    * self.excess_rate_soc
+                )
             )  # affect the value based around the current Soc, targeting 90% battery with a shift of 3kW per 10 percent.
 
         _LOGGER.info(
-            "Synchronising feed in to average of solar power: %skW",
+            "Synchronising feed in to average of solar power: %skW and balancing to %s pc SoC with rate of %s per 10 pc",
             to_value,
+            self.excess_target_soc,
+            self.excess_rate_soc,
         )
 
         to_value = (to_value * 1000) / len(self.inverters)
-        to_value = int(max(to_value, 50))
+        to_value = int(max(to_value, self.excess_min_feed_in_rate))
 
         if self.last_excess >= 0:
-            change = self.last_excess - int(to_value)
+            change = int(to_value) - self.last_excess
             if change == 0:
                 _LOGGER.info("No change")
                 return
 
-            if (-100 < change < 100) and int(to_value) != 0:
+            if (-100 < change < 100) and int(to_value) > self.excess_min_feed_in_rate:
                 _LOGGER.info("Change of %sW per inverter  is not enough", change)
                 return
 
