@@ -39,19 +39,35 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
     """Set up is called when Home Assistant is loading our component."""
 
     def handle_set_setpoint(call):
+        controller = hass.data[DOMAIN]["controller"]
+
         if "target_soc_percent" in call.data:
-            hass.data[DOMAIN]["controller"].excess_target_soc = call.data[
-                "target_soc_percent"
-            ]
+            controller.excess_target_soc = call.data["target_soc_percent"]
 
         if "target_soc_rate" in call.data:
-            hass.data[DOMAIN]["controller"].excess_rate_soc = (
-                float(call.data["target_soc_rate"]) / 10
-            )
+            controller.excess_rate_soc = float(call.data["target_soc_rate"]) / 10
 
         if "min_feed_in_rate" in call.data:
-            hass.data[DOMAIN]["controller"].excess_min_feed_in_rate = int(
-                call.data["min_feed_in_rate"]
+            controller.excess_min_feed_in_rate = int(call.data["min_feed_in_rate"])
+
+        if "rapid_change_threshold" in call.data:
+            controller.excess_rapid_change_threshold = int(
+                call.data["rapid_change_threshold"]
+            )
+
+        if "slow_change_threshold" in call.data:
+            controller.excess_slow_change_threshold = int(
+                call.data["slow_change_threshold"]
+            )
+
+        if "slow_change_period_seconds" in call.data:
+            controller.excess_slow_change_period_seconds = int(
+                call.data["slow_change_period_seconds"]
+            )
+
+        if "averaging_period_seconds" in call.data:
+            controller.excess_averaging_period_seconds = int(
+                call.data["averaging_period_seconds"]
             )
 
     hass.services.register(DOMAIN, "set_excess_params", handle_set_setpoint)
