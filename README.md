@@ -70,7 +70,7 @@ slow_change_period_seconds | The amount of time to wait since the last adjustmen
 averaging_period_seconds | The amount of time in seconds to average solar and demand over, default is 300 seconds.
 
 
-There is an entity "Skyline Excess PV Power" which provides the current calculation of excess over the last 10 minutes, note this entity can be negative if PV is less than demand, and this value does not display any adjustments for SoC balancing.
+There is an entity "Skyline Excess PV Power" which provides the current calculation of excess over the last averaging_period_seconds, note this entity can be negative if PV is less than demand, and this value does not display any adjustments for SoC balancing.
 
 ## Current Limitations
 
