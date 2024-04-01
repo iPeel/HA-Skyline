@@ -39,9 +39,9 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
     """Set up is called when Home Assistant is loading our component."""
 
     def handle_set_setpoint(call):
-        if "target_soc_precent" in call.data:
+        if "target_soc_percent" in call.data:
             hass.data[DOMAIN]["controller"].excess_target_soc = call.data[
-                "target_soc_precent"
+                "target_soc_percent"
             ]
 
         if "target_soc_rate" in call.data:
