@@ -66,7 +66,7 @@ target_soc_rate | The kW per 10 percent to use to maintain the SoC setpoint, e.g
 min_feed_in_rate | If there is no excess solar, this is the value the feed-in will be set to per inverter, default is as configured.
 rapid_change_threshold | If the excess with SoC adjustment is off by more than this the an adjustment will be made within 60 seconds, default is 500w.
 slow_change_threshold | If the excess with SoC adjustment is less than this then no change will be made, unless the amount of excess is zero, default is 100w.
-slow_change_period_seconds | The amount of time to wait since the last adjustment for majing any minor adjustments greater than the slow_change_threshold, default is 600 seconds.
+slow_change_period_seconds | The amount of time to wait since the last adjustment for making any minor adjustments greater than the slow_change_threshold, default is 600 seconds.
 averaging_period_seconds | The amount of time in seconds to average solar and demand over, default is 300 seconds.
 
 
