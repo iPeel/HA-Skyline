@@ -28,7 +28,7 @@
                     "excess_target_soc": "Excess balancer target SoC",
                     "excess_rate_soc": "Excess balancer kW per 10%",
                     "excess_min_feed_in_rate": "Excess idle feed in watts",
-                    "excess_max_soc_deviation_w": "Msx SoC deviation in watts"
+                    "excess_max_soc_deviation_w": "Max SoC deviation in watts"
                 }
             }
         }
