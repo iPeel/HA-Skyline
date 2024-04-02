@@ -62,6 +62,7 @@ class Controller:
         self.excess_slow_change_threshold = 100
         self.excess_slow_change_period_seconds = 600
         self.excess_averaging_period_seconds = 300
+        self.excess_max_soc_deviation_kw = float(3)
 
         if "match_feed_in_to_excess_power" in entry.options:
             self.match_feed_in_to_excess_power = bool(
@@ -85,6 +86,11 @@ class Controller:
 
         if "excess_min_feed_in_rate" in entry.data:
             self.excess_min_feed_in_rate = int(entry.data["excess_min_feed_in_rate"])
+
+        if "excess_max_soc_deviation_w" in entry.data:
+            self.excess_max_soc_deviation_kw = (
+                float(entry.data["excess_max_soc_deviation_w"]) / 1000
+            )
 
         _LOGGER.info("Skyline controller starting")
 
@@ -575,12 +581,19 @@ class Controller:
         )
 
         if to_value > 0:  # only account for SoC if we actually have excess solar.
+            soc_variance = (
+                float(self.current_state_of_charge - self.excess_target_soc)
+                * self.excess_rate_soc
+            )
+
+            if soc_variance > self.excess_max_soc_deviation_kw:
+                soc_variance = self.excess_max_soc_deviation_kw
+
+            if soc_variance < 0 - self.excess_max_soc_deviation_kw:
+                soc_variance = 0 - self.excess_max_soc_deviation_kw
+
             to_value = (
-                to_value
-                + (
-                    float(self.current_state_of_charge - self.excess_target_soc)
-                    * self.excess_rate_soc
-                )
+                to_value + soc_variance
             )  # affect the value based around the current Soc, targeting 90% battery with a shift of 3kW per 10 percent.
 
         _LOGGER.info(

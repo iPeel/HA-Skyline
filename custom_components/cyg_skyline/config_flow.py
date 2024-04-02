@@ -189,6 +189,12 @@ class OptionsFlowHandler(OptionsFlow):
         if "excess_min_feed_in_rate" in self.config_entry.data:
             excess_min_feed_in_rate = self.config_entry.data["excess_min_feed_in_rate"]
 
+        excess_max_soc_deviation_w = 3000
+        if "excess_max_soc_deviation_w" in self.config_entry.data:
+            excess_max_soc_deviation_w = self.config_entry.data[
+                "excess_max_soc_deviation_w"
+            ]
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -200,6 +206,9 @@ class OptionsFlowHandler(OptionsFlow):
                     vol.Optional("excess_rate_soc", default=excess_rate_soc): int,
                     vol.Optional(
                         "excess_min_feed_in_rate", default=excess_min_feed_in_rate
+                    ): int,
+                    vol.Optional(
+                        "excess_max_soc_deviation_w", default=excess_max_soc_deviation_w
                     ): int,
                 }
             ),

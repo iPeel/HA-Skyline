@@ -70,6 +70,11 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
                 call.data["averaging_period_seconds"]
             )
 
+        if "max_soc_deviation_w" in call.data:
+            controller.excess_max_soc_deviation_kw = (
+                float(call.data["max_soc_deviation_w"]) / 1000
+            )
+
     hass.services.register(DOMAIN, "set_excess_params", handle_set_setpoint)
 
     _LOGGER.info("Registered Inverter services")
