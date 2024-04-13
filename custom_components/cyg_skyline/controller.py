@@ -622,6 +622,10 @@ class Controller:
             self.excess_rate_soc,
         )
 
+        if to_value > MAX_GRID_EXPORT_POWER_W / 1000:
+            to_value = min(to_value, MAX_GRID_EXPORT_POWER_W / 1000)
+            _LOGGER.info("Limited export to the limit of %skW", to_value)
+
         to_value = (to_value * 1000) / len(self.inverters)
         to_value = int(max(to_value, self.excess_min_feed_in_rate))
 
@@ -653,10 +657,7 @@ class Controller:
                 )
                 return
 
-        to_value = min(
-            int(math.ceil(float(to_value) / 50.0)) * 50,
-            MAX_GRID_EXPORT_POWER_W / len(self.inverters),
-        )
+        to_value = int(math.ceil(float(to_value) / 50.0)) * 50
 
         self.last_excess = to_value
         self.last_feed_in_sync = time.time()
