@@ -15,6 +15,7 @@ from .const import (
     IMPORT_EXPORT_MONITOR_DURATION_SECONDS,
     IMPORT_EXPORT_THRESHOLD,
     INVERTER_POLL_INTERVAL_SECONDS,
+    MAX_GRID_EXPORT_POWER_W,
     MODBUS_MAX_SLAVE_ADDRESS,
     NO_AGGREGATION,
     PLATFORMS,
@@ -517,12 +518,19 @@ class Controller:
             )
         )
 
+        _LOGGER.debug(
+            "Work mode: %s, match_feed_in_to_excess: %s, last_update: %s",
+            work_mode,
+            self.match_feed_in_to_excess_power,
+            self.last_feed_in_poll,
+        )
         if (
             work_mode == 1
             and self.match_feed_in_to_excess_power is True
             and time.time() - self.last_feed_in_poll >= 60
         ):
             with contextlib.suppress(Exception):
+                _LOGGER.debug("update_feed_in_excess()")
                 await self.update_feed_in_excess()
 
         if len(self.inverters) > 1:
@@ -587,10 +595,21 @@ class Controller:
             )
 
             if soc_variance > self.excess_max_soc_deviation_kw:
+                _LOGGER.info(
+                    "Excess SoC variance would be %skW so limiting to %skW",
+                    soc_variance,
+                    self.excess_max_soc_deviation_kw,
+                )
                 soc_variance = self.excess_max_soc_deviation_kw
-
-            if soc_variance < 0 - self.excess_max_soc_deviation_kw:
+            elif soc_variance < 0 - self.excess_max_soc_deviation_kw:
+                _LOGGER.info(
+                    "Excess SoC variance would be %skW so limiting to %skW",
+                    soc_variance,
+                    0 - self.excess_max_soc_deviation_kw,
+                )
                 soc_variance = 0 - self.excess_max_soc_deviation_kw
+            else:
+                _LOGGER.info("Excess SoC variance is %skW", soc_variance)
 
             to_value = (
                 to_value + soc_variance
@@ -634,7 +653,10 @@ class Controller:
                 )
                 return
 
-        to_value = int(math.ceil(float(to_value) / 50.0)) * 50
+        to_value = min(
+            int(math.ceil(float(to_value) / 50.0)) * 50,
+            MAX_GRID_EXPORT_POWER_W / len(self.inverters),
+        )
 
         self.last_excess = to_value
         self.last_feed_in_sync = time.time()
