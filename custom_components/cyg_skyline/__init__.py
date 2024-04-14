@@ -75,6 +75,11 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
                 float(call.data["max_soc_deviation_w"]) / 1000
             )
 
+        if ("excess_load_percentage") in call.data:
+            controller.self.excess_load_ratio = (
+                float(call.data["excess_load_percentage"]) / 100
+            )
+
     hass.services.register(DOMAIN, "set_excess_params", handle_set_setpoint)
 
     _LOGGER.info("Registered Inverter services")

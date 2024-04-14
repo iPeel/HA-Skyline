@@ -195,6 +195,9 @@ class OptionsFlowHandler(OptionsFlow):
                 "excess_max_soc_deviation_w"
             ]
 
+        excess_load_percentage = 100
+        if "excess_load_percentage" in self.config_entry.data:
+            excess_load_percentage = self.config_entry.data["excess_load_percentage"]
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -204,6 +207,9 @@ class OptionsFlowHandler(OptionsFlow):
                     vol.Optional("clickhouse_url", default=clickhouse_url): str,
                     vol.Optional("excess_target_soc", default=excess_target_soc): int,
                     vol.Optional("excess_rate_soc", default=excess_rate_soc): int,
+                    vol.Optional(
+                        "excess_load_percentage", default=excess_load_percentage
+                    ): int,
                     vol.Optional(
                         "excess_min_feed_in_rate", default=excess_min_feed_in_rate
                     ): int,

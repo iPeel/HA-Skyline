@@ -64,6 +64,7 @@ class Controller:
         self.excess_slow_change_period_seconds = 600
         self.excess_averaging_period_seconds = 300
         self.excess_max_soc_deviation_kw = float(3)
+        self.excess_load_ratio = float(1)
 
         if "match_feed_in_to_excess_power" in entry.options:
             self.match_feed_in_to_excess_power = bool(
@@ -92,6 +93,8 @@ class Controller:
             self.excess_max_soc_deviation_kw = (
                 float(entry.data["excess_max_soc_deviation_w"]) / 1000
             )
+        if "excess_load_percentage" in entry.data:
+            self.excess_load_ratio = float(entry.data["excess_load_percentage"]) / 100
 
         _LOGGER.info("Skyline controller starting")
 
@@ -504,7 +507,8 @@ class Controller:
 
         skyline_average_excess_pv_power = self.aggregate(
             "skyline_average_excess_pv_power",
-            skyline_pv_power - (skyline_eps_load + skyline_grid_tied_load),
+            skyline_pv_power
+            - ((skyline_eps_load + skyline_grid_tied_load) * self.excess_load_ratio),
             math.ceil(
                 self.excess_averaging_period_seconds / INVERTER_POLL_INTERVAL_SECONDS
             ),
@@ -623,7 +627,7 @@ class Controller:
         )
 
         if to_value > MAX_GRID_EXPORT_POWER_W / 1000:
-            to_value = min(to_value, MAX_GRID_EXPORT_POWER_W / 1000)
+            to_value = MAX_GRID_EXPORT_POWER_W / 1000
             _LOGGER.info("Limited export to the limit of %skW", to_value)
 
         to_value = (to_value * 1000) / len(self.inverters)
