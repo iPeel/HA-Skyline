@@ -76,7 +76,7 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
             )
 
         if ("excess_load_percentage") in call.data:
-            controller.self.excess_load_ratio = (
+            controller.excess_load_ratio = (
                 float(call.data["excess_load_percentage"]) / 100
             )
 
