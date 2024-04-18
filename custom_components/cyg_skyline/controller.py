@@ -593,10 +593,13 @@ class Controller:
         )
 
         if to_value > 0:  # only account for SoC if we actually have excess solar.
-            soc_variance = (
-                float(self.current_state_of_charge - self.excess_target_soc)
-                * self.excess_rate_soc
-            )
+            if self.excess_target_soc > 0:
+                soc_variance = (
+                    float(self.current_state_of_charge - self.excess_target_soc)
+                    * self.excess_rate_soc
+                )
+            else:
+                soc_variance = 0
 
             if soc_variance > self.excess_max_soc_deviation_kw:
                 _LOGGER.info(
