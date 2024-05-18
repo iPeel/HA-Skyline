@@ -65,6 +65,8 @@ class Controller:
         self.excess_averaging_period_seconds = 300
         self.excess_max_soc_deviation_kw = float(3)
         self.excess_load_ratio = float(1)
+        self.excess_load_entity_id = ""
+        self.excess_load_entity_id_multiplier = float(1)
 
         if "match_feed_in_to_excess_power" in entry.options:
             self.match_feed_in_to_excess_power = bool(
@@ -95,6 +97,22 @@ class Controller:
             )
         if "excess_load_percentage" in entry.data:
             self.excess_load_ratio = float(entry.data["excess_load_percentage"]) / 100
+
+        if "excess_load_entity_id" in entry.data:
+            self.excess_load_entity_id = str(entry.data["excess_load_entity_id"])
+            if "*" in self.excess_load_entity_id:
+                self.excess_load_entity_id_multiplier = float(
+                    self.excess_load_entity_id.partition("*")[2]
+                )
+                self.excess_load_entity_id = self.excess_load_entity_id.partition("*")[
+                    0
+                ]
+
+                _LOGGER.info(
+                    "Found multiplier in excess_load_entity_id, entity is now %s, multiplier is %s",
+                    self.excess_load_entity_id,
+                    self.excess_load_entity_id_multiplier,
+                )
 
         _LOGGER.info("Skyline controller starting")
 
@@ -505,22 +523,41 @@ class Controller:
             )
         )
 
-        skyline_average_excess_pv_power = self.aggregate(
-            "skyline_average_excess_pv_power",
-            skyline_pv_power
-            - ((skyline_eps_load + skyline_grid_tied_load) * self.excess_load_ratio),
-            math.ceil(
-                self.excess_averaging_period_seconds / INVERTER_POLL_INTERVAL_SECONDS
-            ),
-            always_aggregate=True,
-        )
+        try:
+            if len(self.excess_load_entity_id) > 0:
+                self_consumption_load = self.hass.states.get(
+                    self.excess_load_entity_id
+                ).state
 
-        self.sensor_entities["skyline_average_excess_pv_power"].set_native_value(
-            round(
-                skyline_average_excess_pv_power,
-                2,
+                if self_consumption_load is None:
+                    self_consumption_load = skyline_grid_tied_load
+                else:
+                    self_consumption_load = (
+                        float(self_consumption_load)
+                        * self.excess_load_entity_id_multiplier
+                    )
+            else:
+                self_consumption_load = skyline_grid_tied_load
+
+            skyline_average_excess_pv_power = self.aggregate(
+                "skyline_average_excess_pv_power",
+                skyline_pv_power
+                - ((self_consumption_load + skyline_eps_load) * self.excess_load_ratio),
+                math.ceil(
+                    self.excess_averaging_period_seconds
+                    / INVERTER_POLL_INTERVAL_SECONDS
+                ),
+                always_aggregate=True,
             )
-        )
+
+            self.sensor_entities["skyline_average_excess_pv_power"].set_native_value(
+                round(
+                    skyline_average_excess_pv_power,
+                    2,
+                )
+            )
+        except:  # noqa: E722
+            _LOGGER.error("Exception trying to gather excess load")
 
         _LOGGER.debug(
             "Work mode: %s, match_feed_in_to_excess: %s, last_update: %s",

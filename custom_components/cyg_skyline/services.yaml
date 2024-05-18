@@ -1,0 +1,12 @@
+set_excess_params:
+  target:
+    entity:
+      domain: cyg_skyline
+      supported_features:
+        - cyg_skyline.set_excess_params
+  fields:
+    target_soc_percent:
+      required: false
+      advanced: false
+      example: 85
+      default: 100

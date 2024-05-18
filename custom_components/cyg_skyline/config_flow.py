@@ -194,6 +194,9 @@ class OptionsFlowHandler(OptionsFlow):
             excess_max_soc_deviation_w = self.config_entry.data[
                 "excess_max_soc_deviation_w"
             ]
+        excess_load_entity_id = ""
+        if "excess_load_entity_id" in self.config_entry.data:
+            excess_load_entity_id = self.config_entry.data["excess_load_entity_id"]
 
         excess_load_percentage = 100
         if "excess_load_percentage" in self.config_entry.data:
@@ -216,6 +219,9 @@ class OptionsFlowHandler(OptionsFlow):
                     vol.Optional(
                         "excess_max_soc_deviation_w", default=excess_max_soc_deviation_w
                     ): int,
+                    vol.Optional(
+                        "excess_load_entity_id", default=excess_load_entity_id
+                    ): str,
                 }
             ),
             errors=errors,

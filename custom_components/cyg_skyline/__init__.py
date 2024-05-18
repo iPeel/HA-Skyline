@@ -42,7 +42,7 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
         controller = hass.data[DOMAIN]["controller"]
 
         if "target_soc_percent" in call.data:
-            controller.excess_target_soc = int(call.data["target_soc_percent"])
+            controller.excess_target_soc = call.data["target_soc_percent"]
 
         if "target_soc_rate" in call.data:
             controller.excess_rate_soc = float(call.data["target_soc_rate"]) / 10
