@@ -98,7 +98,10 @@ class Controller:
         if "excess_load_percentage" in entry.data:
             self.excess_load_ratio = float(entry.data["excess_load_percentage"]) / 100
 
-        if "excess_load_entity_id" in entry.data:
+        if (
+            "excess_load_entity_id" in entry.data
+            and len(str(entry.data["excess_load_entity_id"])) > 5
+        ):
             self.excess_load_entity_id = str(entry.data["excess_load_entity_id"])
             if "*" in self.excess_load_entity_id:
                 self.excess_load_entity_id_multiplier = float(
@@ -216,6 +219,7 @@ class Controller:
 
         for inverter in self.inverters:
             try:
+                await inverter.update_software_versions()
                 inverter_power_data = await inverter.read_holding_registers(0x1001, 64)
                 grid_power_data = await inverter.read_holding_registers(0x1300, 63)
                 battery_data = await inverter.read_holding_registers(0x2000, 19)
@@ -359,7 +363,10 @@ class Controller:
                 self.sensor_entities[
                     inverter.serial_number + "_pv_energy_today"
                 ].set_native_value(
-                    registers_to_unsigned_32(inverter_power_data.registers, 38) / 1000
+                    inverter.shag_pv_energy_today(
+                        registers_to_unsigned_32(inverter_power_data.registers, 38)
+                        / 1000
+                    )
                 )
 
                 self.sensor_entities[
@@ -499,6 +506,22 @@ class Controller:
                 ].set_native_value(
                     register_to_signed_16(inverter_power_data.registers[27])
                 )
+
+                self.sensor_entities[
+                    inverter.serial_number + "_master_software_version"
+                ].set_native_value(inverter.master_software_version)
+
+                self.sensor_entities[
+                    inverter.serial_number + "_slave_software_version"
+                ].set_native_value(inverter.slave_software_version)
+
+                self.sensor_entities[
+                    inverter.serial_number + "_ems_software_version"
+                ].set_native_value(inverter.ems_software_version)
+
+                self.sensor_entities[
+                    inverter.serial_number + "_dcdc_software_version"
+                ].set_native_value(inverter.dcdc_software_version)
 
                 self.switch_entities[
                     inverter.serial_number + "_match_feed_in_to_excess_power"
@@ -847,6 +870,9 @@ class Controller:
                         _LOGGER.info(
                             "Skyline Serial Number is %s", inverter.serial_number
                         )
+
+                        await inverter.update_software_versions()
+
                         detect_loops = 0
                         self.inverters.append(inverter)
                         self.have_identity_info = True

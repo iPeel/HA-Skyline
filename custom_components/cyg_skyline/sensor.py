@@ -454,6 +454,66 @@ async def async_setup_entry(
             category=EntityCategory.DIAGNOSTIC,
         )
 
+        controller.sensor_entities[
+            inverter.serial_number + "_master_software_version"
+        ] = InverterSensorEntity(
+            hass,
+            controller,
+            inverter,
+            "Version Master",
+            "master_software_version",
+            "mdi:code-block-braces",
+            category=EntityCategory.DIAGNOSTIC,
+            deviceClass=None,
+            unitOfMeasurement=None,
+            stateClass=None,
+        )
+
+        controller.sensor_entities[
+            inverter.serial_number + "_slave_software_version"
+        ] = InverterSensorEntity(
+            hass,
+            controller,
+            inverter,
+            "Version Slave",
+            "slave_software_version",
+            "mdi:code-block-brackets",
+            category=EntityCategory.DIAGNOSTIC,
+            deviceClass=None,
+            unitOfMeasurement=None,
+            stateClass=None,
+        )
+
+        controller.sensor_entities[
+            inverter.serial_number + "_ems_software_version"
+        ] = InverterSensorEntity(
+            hass,
+            controller,
+            inverter,
+            "Version EMS",
+            "ems_software_version",
+            "mdi:code-block-parentheses",
+            category=EntityCategory.DIAGNOSTIC,
+            deviceClass=None,
+            unitOfMeasurement=None,
+            stateClass=None,
+        )
+
+        controller.sensor_entities[
+            inverter.serial_number + "_dcdc_software_version"
+        ] = InverterSensorEntity(
+            hass,
+            controller,
+            inverter,
+            "Version DC-DC",
+            "dcdc_software_version",
+            "mdi:code-block-tags",
+            category=EntityCategory.DIAGNOSTIC,
+            deviceClass=None,
+            unitOfMeasurement=None,
+            stateClass=None,
+        )
+
         # No point in the below as the inverter is always returning zero until Skylinefix it.
         # controller.sensor_entities[
         #    inverter.serial_number + "_battery_temp"
