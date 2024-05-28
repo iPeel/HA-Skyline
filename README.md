@@ -1,5 +1,5 @@
-# HomeAssistant Skyline integration
-This integration communicates with your Skyline hybrid inverter system, providing real-time visibility on solar output, battery status, utilisation and more. It also allows you to control the work mode and various charging / discharging parameters.
+# HomeAssistant Skyline / Duracell / Senergytec integration
+This integration communicates with your Skyline hybrid inverter system, providing real-time visibility on solar output, battery status, utilisation and more. It also allows you to control the work mode and various charging / discharging parameters. It should also work for any systems which are a similar re-badge of the Senergy SE 3.6KHB-60 & SE 4.6/5/6KHB-120 products.
 
 ![image](https://github.com/iPeel/HA-Skyline/assets/49528212/af71b2de-1363-4bc8-8662-69e89101a9b9)
 
