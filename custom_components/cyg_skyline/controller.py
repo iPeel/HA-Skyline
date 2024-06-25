@@ -67,6 +67,7 @@ class Controller:
         self.excess_load_ratio = float(1)
         self.excess_load_entity_id = ""
         self.excess_load_entity_id_multiplier = float(1)
+        self.excess_always_account_soc = False
 
         if "match_feed_in_to_excess_power" in entry.options:
             self.match_feed_in_to_excess_power = bool(
@@ -652,7 +653,7 @@ class Controller:
             always_aggregate=True,
         )
 
-        if to_value > 0:  # only account for SoC if we actually have excess solar.
+        if self.excess_always_account_soc is True or to_value > 0:  # only account for SoC if we actually have excess solar.
             if self.excess_target_soc > 0:
                 soc_variance = (
                     float(self.current_state_of_charge - self.excess_target_soc)
