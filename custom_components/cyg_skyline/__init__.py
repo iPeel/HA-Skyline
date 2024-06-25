@@ -80,6 +80,11 @@ def setup(hass: HomeAssistant, entry: ConfigEntry):
                 float(call.data["excess_load_percentage"]) / 100
             )
 
+        if "excess_always_account_soc" in call.data:
+            controller.excess_always_account_soc = bool(
+                call.data["excess_always_account_soc"]
+            )
+
     hass.services.register(DOMAIN, "set_excess_params", handle_set_setpoint)
 
     _LOGGER.info("Registered Inverter services")
