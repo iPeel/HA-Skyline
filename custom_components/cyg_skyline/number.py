@@ -5,6 +5,7 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfPower
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -130,6 +131,25 @@ async def async_setup_entry(
             stateClass=SensorStateClass.MEASUREMENT,
         )
 
+        controller.number_entities[
+            inverter.serial_number + "_excess_target_soc"
+        ] = InverterNumberEntity(
+            hass,
+            controller,
+            inverter,
+            "Excess Target SoC",
+            "excess_target_soc",
+            "mdi:function-variant",
+            registerToChange=None
+            function_on_change=controller.set_excess_target_soc,
+            minValue=0,
+            maxValue=100,
+            stepSize=5,
+            valueMultiplier=1,
+            unitOfMeasurement=PERCENTAGE,
+            category=EntityCategory.CONFIG
+        )
+
     entities = controller.get_number_entities()
 
     async_add_entities(entities)
@@ -158,6 +178,7 @@ class InverterNumberEntity(NumberEntity):
         registerToChange=None,
         valueMultiplier=1,
         adjustForParallel=False,
+        function_on_change=None,
     ) -> None:
         """Initialise a number entity."""
         self.currentValue = None
@@ -181,6 +202,7 @@ class InverterNumberEntity(NumberEntity):
         self._attr_state_class = stateClass
         self._attr_icon = icon
         self._attr_mode = NumberMode.BOX
+        self.function_on_change = function_on_change
 
         if category is not None:
             self._attr_entity_category = category
@@ -215,12 +237,16 @@ class InverterNumberEntity(NumberEntity):
             # avoid noise...
             return
 
-        # self.currentValue = value LEAVE THIS UNCHANGED, let the next poller confirm the change instead.
-        await self.controller.set_register(
-            self.inverter,
-            self.register_to_change,
-            int(value * self.get_value_multiplier()),
-        )
+        if self.function_on_change is not None:
+            await self.function_on_change(value)
+
+        if self.register_to_change is not None:
+            # self.currentValue = value LEAVE THIS UNCHANGED, let the next poller confirm the change instead.
+            await self.controller.set_register(
+                self.inverter,
+                self.register_to_change,
+                int(value * self.get_value_multiplier()),
+            )
 
     def get_value_multiplier(self) -> float:
         """Get the amount to m,ultiply the value from based on how many parallel inverters there are."""
