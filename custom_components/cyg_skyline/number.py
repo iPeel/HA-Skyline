@@ -140,7 +140,7 @@ async def async_setup_entry(
             "Excess Target SoC",
             "excess_target_soc",
             "mdi:function-variant",
-            registerToChange=None
+            registerToChange=None,
             function_on_change=controller.set_excess_target_soc,
             minValue=0,
             maxValue=100,
