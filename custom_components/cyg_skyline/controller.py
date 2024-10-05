@@ -83,8 +83,19 @@ class Controller:
                 self.match_feed_in_to_excess_power,
             )
 
-        if "excess_target_soc" in entry.data:
-            self.excess_target_soc = int(entry.data["excess_target_soc"])
+        if "excess_target_soc" in entry.options:
+            self.excess_target_soc = int(
+                entry.options["excess_target_soc"]
+            )
+            _LOGGER.info(
+                "Foundexcess target soc setting of %s",
+                entry.options["excess_target_soc"],
+            )
+        else:
+            _LOGGER.info(
+                "Defaulting excess target soc setting of %s",
+                self.excess_target_soc,
+            )
 
         if "excess_rate_soc" in entry.data:
             self.excess_rate_soc = float(entry.data["excess_rate_soc"]) / 10
@@ -528,6 +539,10 @@ class Controller:
                     inverter.serial_number + "_match_feed_in_to_excess_power"
                 ].set_selected_option(self.match_feed_in_to_excess_power)
 
+                self.number_entities[
+                    inverter.serial_number + "excess_target_soc"
+                ].set_number_value(self.excess_target_soc)
+            
                 # No point in the below as the inverter is always returning zero until Skyline fix it.
                 # self.sensor_entities[
                 #    inverter.serial_number + "_battery_temp"
@@ -635,7 +650,15 @@ class Controller:
         """Update the feed in excess setting."""
         self.match_feed_in_to_excess_power = setting
 
-        options = {"match_feed_in_to_excess_power": setting}
+        options = {"match_feed_in_to_excess_power": self.match_feed_in_to_excess_power, "excess_target_soc": self.excess_target_soc }
+
+        self.hass.config_entries.async_update_entry(self.config, options=options)
+
+    async def set_excess_target_soc(self, setting: int):
+        """Update the excess target soc."""
+        self.excess_target_soc = setting
+
+        options = {"match_feed_in_to_excess_power": self.match_feed_in_to_excess_power, "excess_target_soc": self.excess_target_soc }
 
         self.hass.config_entries.async_update_entry(self.config, options=options)
 
