@@ -178,9 +178,6 @@ class OptionsFlowHandler(OptionsFlow):
         if "clickhouse_url" in self.config_entry.data:
             clickhouse_url = self.config_entry.data["clickhouse_url"]
 
-        excess_target_soc = 90
-        if "excess_target_soc" in self.config_entry.data:
-            excess_target_soc = self.config_entry.data["excess_target_soc"]
         excess_rate_soc = 3
         if "excess_rate_soc" in self.config_entry.data:
             excess_rate_soc = self.config_entry.data["excess_rate_soc"]
@@ -208,7 +205,6 @@ class OptionsFlowHandler(OptionsFlow):
                     vol.Required("host", default=self.config_entry.data["host"]): str,
                     vol.Required("port", default=self.config_entry.data["port"]): int,
                     vol.Optional("clickhouse_url", default=clickhouse_url): str,
-                    vol.Optional("excess_target_soc", default=excess_target_soc): int,
                     vol.Optional("excess_rate_soc", default=excess_rate_soc): int,
                     vol.Optional(
                         "excess_load_percentage", default=excess_load_percentage
