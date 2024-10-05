@@ -540,7 +540,7 @@ class Controller:
                 ].set_selected_option(self.match_feed_in_to_excess_power)
 
                 self.number_entities[
-                    inverter.serial_number + "excess_target_soc"
+                    inverter.serial_number + "_excess_target_soc"
                 ].set_number_value(self.excess_target_soc)
             
                 # No point in the below as the inverter is always returning zero until Skyline fix it.
