@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 import logging
 import time
 
+from pymodbus import FramerType
 from pymodbus.client import AsyncModbusTcpClient
-from pymodbus.transaction import ModbusSocketFramer
 
 from homeassistant.helpers.device_registry import DeviceInfo
 
@@ -21,7 +21,7 @@ class ModbusHost:
         self.host = host
         self.port = port
         self.client = AsyncModbusTcpClient(
-            self.host, self.port, framer=ModbusSocketFramer
+            host=self.host, port=self.port, framer=FramerType.SOCKET
         )
 
     async def read_holding_registers(self, start_address, num_registers, slave_address):
@@ -34,7 +34,7 @@ class ModbusHost:
 
         try:
             return await self.client.read_holding_registers(
-                start_address, num_registers, slave=slave_address
+                address=start_address, count=num_registers, slave=slave_address
             )
         except:  # noqa: E722
             return None
