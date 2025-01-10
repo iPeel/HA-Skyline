@@ -39,13 +39,13 @@ class ModbusHub:
     async def checkHost(self, host, port) -> bool:
         """Test we can access the configured host."""
         try:
-            client = AsyncModbusTcpClient(host, port)
+            client = AsyncModbusTcpClient(host=host, port=port)
             await client.connect()
             if not client or not client.connected:
                 _LOGGER.error("CYG Modbus host invalid")
                 return False
 
-            response = await client.read_holding_registers(0x1A10, 8, slave=1)
+            response = await client.read_holding_registers(address=0x1A10, count=8, slave=1)
             if not response:
                 _LOGGER.error("CYG Modbus no response from host")
                 return False
