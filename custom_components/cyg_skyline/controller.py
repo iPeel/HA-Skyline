@@ -901,6 +901,7 @@ class Controller:
                         self.inverters.append(inverter)
                         self.have_identity_info = True
                     except:  # noqa: E722
+                        _LOGGER.exception("Exception while scanning")
                         _LOGGER.info(
                             "Stopped scanning with exception for modbus host %s at slave %s",
                             host,
