@@ -1,11 +1,14 @@
 set_excess_params:
+  name: Set excess export parameters
+  description: Sets the runtime parameteers for excess export.
   target:
     entity:
-      domain: cyg_skyline
-      supported_features:
-        - cyg_skyline.set_excess_params
+      domain: sensor
+      integration: cyg_skyline
   fields:
     target_soc_percent:
+      name: Target SoC percentage
+      description: The percentage of SoC to attempt to reach
       required: false
       advanced: false
       example: 85
