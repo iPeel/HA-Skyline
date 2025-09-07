@@ -1,6 +1,6 @@
 set_excess_params:
   name: Set excess export parameters
-  description: Sets the runtime parameteers for excess export.
+  description: Sets the runtime parameters for excess export.
   target:
     entity:
       domain: sensor
