@@ -1,4 +1,5 @@
 """Config flow for CYG Skyline integration."""
+
 from __future__ import annotations
 
 import logging
@@ -45,7 +46,9 @@ class ModbusHub:
                 _LOGGER.error("CYG Modbus host invalid")
                 return False
 
-            response = await client.read_holding_registers(address=0x1A10, count=8, slave=1)
+            response = await client.read_holding_registers(
+                address=0x1A10, count=8, device_id=1
+            )
             if not response:
                 _LOGGER.error("CYG Modbus no response from host")
                 return False
@@ -58,7 +61,8 @@ class ModbusHub:
                 serial = serial + chr(c) + chr(f)
 
             _LOGGER.info("Connected to inverter serial number %s", serial)
-        except:  # noqa: E722
+        except Exception as e:  # noqa: BLE001
+            _LOGGER.error(e)
             return False
 
         return True

@@ -1,4 +1,5 @@
 """Skyline inverter modules."""
+
 from datetime import datetime, timedelta
 import logging
 import time
@@ -34,7 +35,7 @@ class ModbusHost:
 
         try:
             return await self.client.read_holding_registers(
-                address=start_address, count=num_registers, slave=slave_address
+                address=start_address, count=num_registers, device_id=slave_address
             )
         except:  # noqa: E722
             return None
@@ -48,7 +49,7 @@ class ModbusHost:
 
         try:
             return await self.client.write_register(
-                address=register, value=value, slave=slave_address
+                address=register, value=value, device_id=slave_address
             )
         except:  # noqa: E722
             return None
