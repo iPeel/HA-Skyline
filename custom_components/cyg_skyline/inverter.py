@@ -130,14 +130,18 @@ class Inverter:
             response.registers, 0, 3
         )
 
-        response = await self.read_holding_registers(0x1A26, 3)
-        self.slave_software_version = self.registers_to_string(response.registers, 0, 3)
+        try:
+            response = await self.read_holding_registers(0x1A26, 3)
+            self.slave_software_version = self.registers_to_string(response.registers, 0, 3)
 
-        response = await self.read_holding_registers(0x1A60, 3)
-        self.ems_software_version = self.registers_to_string(response.registers, 0, 3)
+            response = await self.read_holding_registers(0x1A60, 3)
+            self.ems_software_version = self.registers_to_string(response.registers, 0, 3)
 
-        response = await self.read_holding_registers(0x1A6F, 3)
-        self.dcdc_software_version = self.registers_to_string(response.registers, 0, 3)
+            response = await self.read_holding_registers(0x1A6F, 3)
+            self.dcdc_software_version = self.registers_to_string(response.registers, 0, 3)
+
+        except:  # noqa: E722
+            _LOGGER.info("Unable to get software versions")
 
         _LOGGER.info(
             "Inverter %s versions are Master: %s, Slave: %s, EMS: %s, DCDC: %s",
